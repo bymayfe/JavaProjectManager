@@ -1,0 +1,13 @@
+# Ignore private directory
+private/
+
+# Maven build directory
+target/
+
+# IDE configurations
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
