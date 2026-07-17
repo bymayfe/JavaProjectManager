@@ -58,6 +58,10 @@ set ERROR_CODE=0
 @setlocal
 
 @REM ==== START VALIDATION ====
+if exist "%JAVA_HOME%\bin\java.exe" goto OkJHome
+if not exist "C:\Program Files\Java" goto skipAutoJHome
+for /d %%i in ("C:\Program Files\Java\jdk-*") do set "JAVA_HOME=%%i"
+:skipAutoJHome
 if not "%JAVA_HOME%" == "" goto OkJHome
 
 echo.

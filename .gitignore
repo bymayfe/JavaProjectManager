@@ -3,6 +3,7 @@ private/
 
 # Maven build directory
 target/
+dist/
 
 # IDE configurations
 .idea/

@@ -61,37 +61,109 @@ javaProje/
 
 ---
 
-## 🚀 Nasıl Çalıştırılır?
+## ⚙️ Nasıl Çalıştırılır ve Derlenir?
 
-Smart Project Manager uygulamasını çalıştırmak için işletim sisteminize göre aşağıdaki yollardan birini seçebilirsiniz:
-
-### Yöntem A: Hızlı Başlatıcı Scriptleri (Tavsiye Edilen)
-Bilgisayarınıza Maven kurmanıza gerek kalmadan, tek tıkla projeyi derleyip çalıştırabilirsiniz.
-
-1.  **Windows için:**
-    *   Klasördeki [run.bat](file:///C:/Users/seyfo/Desktop/Period%208/javaProje/run.bat) dosyasına çift tıklayın veya terminalden `.\run.bat` komutunu çalıştırın.
-2.  **Mac / Linux için:**
-    *   Terminalden sırayla şu komutları çalıştırın:
-        ```bash
-        chmod +x run.sh
-        ./run.sh
-        ```
-
-> [!NOTE]
-> Bu scriptler bilgisayarınızda daha önceden derlenmiş bir sürüm (`target`) bulursa doğrudan çalıştırır. Eğer derlenmiş sürüm yoksa, internetten **Maven Wrapper** aracılığıyla gerekli bağımlılıkları otomatik olarak indirip derlemeyi başlatır.
+Smart Project Manager uygulamasını derlemek ve çalıştırmak için iki farklı yol (Arayüz Tıklamaları veya Komut Satırı) kullanabilirsiniz.
 
 ---
 
-### Yöntem B: Manuel Derleme ve Çalıştırma
-Eğer komutları elle çalıştırmayı tercih ediyorsanız:
+### 🎮 Yöntem A: Arayüz (UI) Üzerinden Tıklayarak
+Eğer terminal kullanmak istemiyorsanız, geliştirme ortamınızın (IDE) grafik arayüzündeki hazır butonları kullanarak derleme ve çalıştırma yapabilirsiniz.
 
-1.  **Projeyi derleyin (Maven Wrapper ile):**
-    *   **Windows:** `mvnw.cmd clean package`
-    *   **Mac / Linux:** `./mvnw clean package`
-2.  **Oluşan JAR dosyasını çalıştırın:**
-    ```bash
-    java -jar target/SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar
-    ```
+<details>
+<summary><b>👁️ VS Code ile Tıklayarak Derleme & Çalıştırma (Açmak için tıklayın)</b></summary>
+
+1. **Projeyi Derleme (JAR Üretme):**
+   * Sol menüdeki **MAVEN** panelini genişletin.
+   * `SmartProjectManager` > `Lifecycle` klasörünü açın.
+   * Önce **`clean`** seçeneğinin, ardından **`package`** seçeneğinin yanındaki **Oynat (Run)** butonuna tıklayarak çalıştırın.
+2. **Projeyi Çalıştırma:**
+   * Proje dosyaları arasından `src/main/java/com/smartproject/Main.java` dosyasını bulun.
+   * Dosyayı açıp sağ üst köşedeki **Oynat (Run Java)** butonuna basarak programı başlatın.
+</details>
+
+<details>
+<summary><b>👁️ Apache NetBeans ile Tıklayarak Derleme & Çalıştırma (Açmak için tıklayın)</b></summary>
+
+1. **Projeyi Derleme (JAR Üretme):**
+   * Soldaki **Projects** panelinde projenizin adına (`SmartProjectManager`) sağ tıklayın.
+   * Menüden **"Clean and Build"** seçeneğini seçin. Maven projenizi otomatik derleyecektir.
+2. **Projeyi Çalıştırma:**
+   * Projenize sağ tıklayıp **"Run"** seçeneğini seçin veya klavyeden **F6** tuşuna basarak uygulamayı çalıştırın.
+</details>
+
+---
+
+### 💻 Yöntem B: Komut Satırı (Terminal) ile
+Terminal veya komut satırı kullanarak daha hızlı işlemler yapabilirsiniz.
+
+#### 1. Hızlı Başlatıcı Scriptleri (Maven Gerektirmez):
+Proje kök dizininde hazır bulunan scriptleri kullanarak tek tıkla çalıştırabilirsiniz:
+* **Windows için:** `run.bat` dosyasına çift tıklayın veya terminalden çalıştırın:
+  ```cmd
+  .\run.bat
+  ```
+* **Mac / Linux için:** Terminale sırasıyla şu komutları girin:
+  ```bash
+  chmod +x run.sh
+  ./run.sh
+  ```
+*Bu scriptler bilgisayarınızda daha önceden derlenmiş bir sürüm (`target/` altında) bulursa doğrudan çalıştırır. Eğer yoksa, Maven Wrapper aracılığıyla otomatik olarak gerekli tüm bağımlılıkları indirip projeyi derler.*
+
+#### 2. Manuel Derleme ve Çalıştırma (Maven Wrapper ile):
+* **Windows:**
+  ```cmd
+  mvnw.cmd clean package
+  java -jar target/SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar
+  ```
+* **Mac / Linux:**
+  ```bash
+  ./mvnw clean package
+  java -jar target/SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar
+  ```
+
+---
+
+### 📦 Yöntem C: Manuel Sürüm (Release) Dosyaları Oluşturma
+Hocanıza göndereceğiniz veya GitHub Sürümlerine (Releases) yükleyeceğiniz dosyaları hazırlama adımları:
+
+> [!NOTE]
+> Her işletim sistemi (Windows, macOS, Linux) için sadece ortak **JAR** dosyasını (`SmartProjectManager-CrossPlatform.jar`) paylaşmak veya kullanmak da tamamen yeterlidir (bu durumda hedef bilgisayarda en az Java 11 kurulu olması gerekir). İşletim sistemlerine özel yerel paketler (EXE, APP, DEB) oluşturmak isteğe bağlıdır.
+
+
+
+1. **JAR Dosyasını Derleyin:**
+   * **Arayüzden:** VS Code Maven panelinden `package` veya NetBeans'ten `Clean and Build` yapın.
+   * **Terminalden:** `mvnw.cmd clean package` (Windows) veya `./mvnw clean package` (Mac/Linux) çalıştırın.
+2. **Mac ve Linux Sürümünü Hazırlayın:**
+   * `target/` içinde oluşan JAR dosyasını kopyalayıp `dist/` klasörünün içerisine yapıştırın ve adını **`SmartProjectManager-CrossPlatform.jar`** yapın.
+3. **Sistem Kurulum & Çalıştırılabilir Paketlerini Derleyin (jpackage):**
+   *jpackage aracı çapraz derlemeyi desteklemez; hangi sistem için paket üretecekseniz o işletim sisteminde bu komutu çalıştırmalısınız:*
+   * **Windows (.exe - Taşınabilir Klasör):**
+     Terminalden şu komutla yerel Windows uygulaması oluşturun:
+     ```cmd
+     "C:\Program Files\Java\jdk-26.0.1\bin\jpackage.exe" --input target\ --dest dist\ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
+     ```
+   * **macOS (.app Uygulaması):**
+     Mac terminalinde şu komutla taşınabilir uygulama paketi üretebilirsiniz:
+     ```bash
+     jpackage --input target/ --dest dist/ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
+     ```
+     *(Eğer disk resmi kurulum paketi üretmek isterseniz `--type app-image` yerine `--type dmg` parametresini kullanabilirsiniz).*
+   * **Linux (.deb / Kurulum Paketi):**
+     Linux terminalinde şu komutla Debian paketi üretebilirsiniz:
+     ```bash
+     jpackage --input target/ --dest dist/ --name smartprojectmanager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type deb
+     ```
+4. **Taşınabilir Sürümü Sıkıştırın (ZIP / TAR.GZ):**
+   * **Windows'ta (Sağ Tıkla):** `dist/` klasöründeki `SmartProjectManager` klasörüne **sağ tıklayarak ZIP dosyasına sıkıştırın** ve adını `SmartProjectManager-Windows-Portable.zip` yapın.
+   * **Mac / Linux'ta (Terminalden):** Terminalden şu komutla sıkıştırın:
+     ```bash
+     tar -czvf dist/SmartProjectManager-Portable.tar.gz -C dist SmartProjectManager
+     ```
+
+
+
 
 ---
 
