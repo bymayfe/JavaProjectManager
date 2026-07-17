@@ -57,6 +57,8 @@ public class RemoteConnectionDialog extends JDialog {
     private JButton btnConnect;
     private JLabel lblConnStatus;
     private static boolean isConnected = false;
+    /** Aktif bir baglanma islemi varken yeni denemeyi engeller (rate limit korumasi) */
+    private volatile boolean isConnecting = false;
     private static String staticHomeDir = "";
     private static String staticHost = "";
     private static String staticPort = "";
@@ -568,6 +570,13 @@ public class RemoteConnectionDialog extends JDialog {
     // ====================================================
 
     private void connectToServer() {
+        // Debounce: Aktif bir baglanma islemi varken yeni deneme baslatma
+        if (isConnecting) {
+            lblConnStatus.setText("Zaten baglaniliyor, lutfen bekleyin...");
+            lblConnStatus.setForeground(CLR_WARNING);
+            return;
+        }
+
         String host = txtHost.getText().trim();
         String portStr = txtPort.getText().trim();
         String user = txtUser.getText().trim();
@@ -584,6 +593,7 @@ public class RemoteConnectionDialog extends JDialog {
         String pemPath = getPemPath();
         boolean useSudo = chkSudo.isSelected();
 
+        isConnecting = true;
         btnConnect.setEnabled(false);
         lblConnStatus.setText("Baglaniliyor...");
         lblConnStatus.setForeground(CLR_WARNING);
@@ -643,6 +653,7 @@ public class RemoteConnectionDialog extends JDialog {
                     lblConnStatus.setText("Baglanti hatasi: " + getCleanMessage(ex));
                     lblConnStatus.setForeground(CLR_HINT_GIT);
                 } finally {
+                    isConnecting = false;
                     btnConnect.setEnabled(true);
                 }
             }

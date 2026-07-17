@@ -74,11 +74,13 @@ public class JsonDatabaseProvider implements DatabaseProvider {
         entry.description = project.getDescription();
         entry.fileCount   = project.getSourceFiles().size();
 
+        // Baglanti kimlik bilgileri: sadece host, port ve kullanici adi saklanir.
+        // Sifre ve PEM yolu guvenlk nedeniyle DB'ye yazilmaz.
         entry.sshHost       = project.getSshHost();
         entry.sshPort       = project.getSshPort();
         entry.sshUser       = project.getSshUser();
-        entry.sshPass       = project.getSshPass();
-        entry.sshPemPath    = project.getSshPemPath();
+        entry.sshPass       = null;       // Guvenlik: sifre DB'ye yazilmaz
+        entry.sshPemPath    = null;       // Guvenlik: PEM yolu DB'ye yazilmaz
         entry.containerId   = project.getContainerId();
         entry.containerName = project.getContainerName();
 

@@ -5,6 +5,7 @@
 [![Java Version](https://img.shields.io/badge/Java-11%2B-orange?logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Maven Build](https://img.shields.io/badge/Maven-3.x-blue?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.1-informational)](CHANGELOG.md)
 [![Platform Compatibility](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/bymayfe)
 
 Smart Project Manager, yazılım geliştirme projelerinin yaşam döngüsünü desteklemek üzere tasarlanmış, kapsamlı ve modern bir **Java tabanlı masaüstü uygulamasıdır**. Bu proje, geliştiricinin **Java Programlama Dersi** kapsamında geliştirdiği dönem projesidir. Projenin fikir sahibi ve baş geliştiricisi **Seyfettin Budak**'tır.
@@ -16,12 +17,29 @@ Geliştiricilere ve proje yöneticilerine; projelerini etkin bir şekilde yönet
 ## ✨ Temel Özellikler
 
 *   📂 **Kapsamlı Proje Yönetimi:** Proje oluşturma, düzenleme, listeleme ve kalıcı olarak depolama süreçlerini yöneten gelişmiş arayüz ve veri modeli.
-*   🧠 **Yapay Zeka Destekli Analiz (`AIAnalyzer`):** Yapay zeka motoru (Gemini, Groq, GPT) entegrasyonu ile kod tabanınızı analiz eder, performans darboğazlarını ve güvenlik açıklarını raporlar.
+*   🧠 **Yapay Zeka Destekli Analiz (`AIAnalyzer`):** **Gemini**, **Groq** ve **GPT/OpenAI-uyumlu** servislerini destekleyen yapay zeka motoru. Kod tabanınızı analiz eder, performans darboğazlarını ve güvenlik açıklarını raporlar; ayrıca otomatik olarak profesyonel README dosyaları ve proje etiketleri üretir. Desteklenen modeller için [Yapay Zeka Servisleri](#-yapay-zeka-servisleri--desteklenen-modeller) bölümüne bakın.
 *   🐳 **Docker Entegrasyonu ve Tarama:** Yerel Docker ortamındaki imajları, container'larını ve ağları tarayarak grafiksel arayüz üzerinden detaylı durum bilgisi sunar.
 *   🐙 **Git & GitHub Entegrasyonu:** JGit entegrasyonu sayesinde Git komutlarına gerek kalmadan değişiklikleri commit etme, depolara pushlama ve GitHub API üzerinden depo yönetimi yapabilme.
-*   🔒 **Uzak Bağlantı & SSH Yönetimi:** Uzak sunuculara veya Docker ana bilgisayarlarına güvenli SSH (JSch) bağlantısı kurarak oradaki dosyalara erişebilme, onları yerleşik konsol üzerinden kontrol edebilme ve uzak sunucudaki projeleri analiz ettirebilme desteği.
+*   🔒 **Uzak Bağlantı & SSH Yönetimi:** Uzak sunuculara güvenli SSH (JSch) bağlantısı kurarak dosyalara erişebilme, yerleşik konsol üzerinden komut çalıştırabilme ve uzak projeleri analiz ettirebilme. **Rate limit koruması** (bağlantı debounce + exponential backoff retry) ile SSH sunucusunun tekrarlı bağlantı denemelerini engellemesi önlenir.
 *   💾 **Esnek Veritabanı Seçimi:** Uygulama verilerinin nerede saklanacağını (MongoDB, MySQL veya gömülü SQLite) dinamik olarak seçebilme ve yönetebilme desteği.
+*   👤 **Bağlantı Profil Sistemi:** `ConfigManager` üzerinden birden fazla SSH/AI/veritabanı yapılandırma profilini kaydedip geri yükleyebilme — ortamlar arasında tek tıkla geçiş.
 *   🎨 **Modern Kullanıcı Arayüzü:** FlatLaf teması ile modern, göze hoş gelen ve yüksek çözünürlüklü (HiDPI) ekranlarla uyumlu kullanıcı dostu grafik arayüz.
+
+---
+
+## 🤖 Yapay Zeka Servisleri & Desteklenen Modeller
+
+Tüm yapay zeka özellikleri (kod analizi, README üretimi, proje etiketleme, asistan sohbeti) `AIAnalyzer` motoru üzerinden çalışır ve üç sağlayıcı ailesini destekler:
+
+| Sağlayıcı | Servis Kodu | Varsayılan Model | Notlar |
+|-----------|-------------|-------------------|--------|
+| **Google Gemini** | `gemini` | `gemini-2.5-flash` | Ayarlardan değiştirilebilir |
+| **Groq** | `groq` | `llama-3.3-70b-versatile` | Ücretsiz tier'in en iyisi; hızlı çıkarım |
+| **OpenAI / GPT** | `gpt` | `gpt-4o-mini` | Tam OpenAI API desteği |
+| **Özel (OpenAI-Uyumlu)** | `custom` | Yapılandırılabilir | Ollama, LM Studio gibi yerel endpoint'lerle çalışır |
+
+> [!TIP]
+> Ücretli kullanım istemiyorsanız **Groq** + `llama-3.3-70b-versatile` kombinasyonu en iyi hız/kalite dengesini sunar. Ücretsiz API anahtarınızı [console.groq.com](https://console.groq.com) adresinden alabilirsiniz.
 
 ---
 
@@ -31,8 +49,8 @@ Geliştiricilere ve proje yöneticilerine; projelerini etkin bir şekilde yönet
 *   **Grafik Arayüz:** Java Swing & AWT (FlatLaf Modern Teması ile)
 *   **Veritabanı Desteği:** SQLite, MySQL ve MongoDB
 *   **Sürüm Kontrolü:** Eclipse JGit
-*   **Ağ & Bağlantı:** JSch (SSH kütüphanesi)
-*   **Yapay Zeka:** Google GenAI SDK & OpenAI API standardı
+*   **Ağ & Bağlantı:** JSch (keepAlive, debounce ve exponential backoff retry ile)
+*   **Yapay Zeka:** Google GenAI SDK (Gemini) & OpenAI-uyumlu REST API (Groq, GPT, Özel)
 *   **Build Sistemi:** Maven 3.x
 
 ---
@@ -176,3 +194,9 @@ Hocanıza göndereceğiniz veya GitHub Sürümlerine (Releases) yükleyeceğiniz
 ## 📄 Lisans
 
 Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına göz atabilirsiniz.
+
+---
+
+## 📋 Değişiklik Günlüğü
+
+Tüm sürüm geçmişi ve yayın notları için [CHANGELOG.md](CHANGELOG.md) dosyasına bakın.

@@ -385,7 +385,7 @@ public class MainGUI extends JFrame {
 
         // Groq
         gbc.gridy = 2; gbc.gridwidth = 2;
-        rbUseGroq = new JRadioButton("Groq (llama-3.1-8b-instant)");
+        rbUseGroq = new JRadioButton("Groq (llama-3.3-70b-versatile)");
         rbUseGroq.setFont(new Font("Segoe UI", Font.BOLD, 12));
         panel.add(rbUseGroq, gbc);
 

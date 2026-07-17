@@ -87,8 +87,8 @@ public class SqlDatabaseProvider implements DatabaseProvider {
         entry.sshHost       = project.getSshHost();
         entry.sshPort       = project.getSshPort();
         entry.sshUser       = project.getSshUser();
-        entry.sshPass       = project.getSshPass();
-        entry.sshPemPath    = project.getSshPemPath();
+        entry.sshPass       = null;    // Guvenlik: sifre DB'ye yazilmaz
+        entry.sshPemPath    = null;    // Guvenlik: PEM yolu DB'ye yazilmaz
         entry.containerId   = project.getContainerId();
         entry.containerName = project.getContainerName();
 
@@ -191,8 +191,8 @@ public class SqlDatabaseProvider implements DatabaseProvider {
                 entry.sshHost = rs.getString("sshHost");
                 entry.sshPort = rs.getString("sshPort");
                 entry.sshUser = rs.getString("sshUser");
-                entry.sshPass = rs.getString("sshPass");
-                entry.sshPemPath = rs.getString("sshPemPath");
+                entry.sshPass    = null; // Guvenlik: DB'den okunmaz
+                entry.sshPemPath = null; // Guvenlik: DB'den okunmaz
                 entry.containerId = rs.getString("containerId");
                 entry.containerName = rs.getString("containerName");
                 list.add(entry);

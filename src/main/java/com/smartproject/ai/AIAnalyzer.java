@@ -74,7 +74,7 @@ public class AIAnalyzer {
         for (String tag : raw.split(",")) {
             String t = tag.trim()
                           .toLowerCase()
-                          .replaceAll("[^a-zçğıöşüa-z0-9\\-]", "");
+                          .replaceAll("[^a-z0-9çğışöü\\-]", ""); // Duzeltilmis regex
             if (!t.isEmpty() && t.length() <= 30) tags.add(t);
         }
         return tags;
@@ -121,8 +121,9 @@ public class AIAnalyzer {
                 model = (gptModel == null || gptModel.trim().isEmpty()) 
                         ? "gpt-4o-mini" : gptModel.trim();
             } else {
+                // Groq — ucretlsiz tier'in en iyi modeli
                 apiUrl = "https://api.groq.com/openai/v1/chat/completions";
-                model = "llama-3.1-8b-instant";
+                model = "llama-3.3-70b-versatile";
             }
             return callWithRetry(() -> sendOpenAiCompatibleRequest(apiUrl, model, messages, apiKey));
         }
@@ -190,26 +191,41 @@ public class AIAnalyzer {
         long delayMs = 2000;
         double backoffFactor = 2.0;
 
+        Exception lastException = null;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 return callable.call();
             } catch (Exception e) {
+                lastException = e;
                 e.printStackTrace();
+
                 String errorClass = e.getClass().getName().toLowerCase();
-                String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
-                String causeMsg = e.getCause() != null ? " -> " + e.getCause().toString() : "";
+                String errorMsg   = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                // Cause'u da kontrol et (Gemini SDK wrapped exception fırlatabilir)
+                String causeMsg   = "";
+                if (e.getCause() != null) {
+                    causeMsg = e.getCause().toString().toLowerCase();
+                    if (e.getCause().getMessage() != null) {
+                        causeMsg += " " + e.getCause().getMessage().toLowerCase();
+                    }
+                }
+                String allMsg = errorMsg + " " + causeMsg;
 
-                boolean isRateLimit = errorMsg.contains("429") || 
-                                     errorMsg.contains("rate limit") || 
-                                     errorMsg.contains("quota") ||
-                                     errorMsg.contains("too many requests");
+                boolean isRateLimit = allMsg.contains("429") ||
+                                     allMsg.contains("rate limit") ||
+                                     allMsg.contains("rate_limit") ||
+                                     allMsg.contains("quota") ||
+                                     allMsg.contains("too many requests") ||
+                                     allMsg.contains("resource_exhausted"); // Gemini SDK kodu
 
-                boolean isNetworkError = errorClass.contains("io") || 
-                                         errorClass.contains("timeout") || 
+                boolean isNetworkError = errorClass.contains("io") ||
+                                         errorClass.contains("timeout") ||
                                          errorClass.contains("connect") ||
-                                         errorMsg.contains("failed to execute http request") ||
-                                         errorMsg.contains("timeout") ||
-                                         errorMsg.contains("connection");
+                                         errorClass.contains("runtime") || // Gemini SDK RuntimeException
+                                         allMsg.contains("failed to execute http request") ||
+                                         allMsg.contains("timeout") ||
+                                         allMsg.contains("connection") ||
+                                         allMsg.contains("socket");
 
                 boolean shouldRetry = isRateLimit || isNetworkError;
 
@@ -217,14 +233,16 @@ public class AIAnalyzer {
                     throw e;
                 }
 
-                long jitter = (long) (Math.random() * 500);
-                long sleepTime = delayMs + jitter;
-                String errorType = isRateLimit ? "Rate Limit (429/Quota)" : "Gecici Ag/IO Hatasi";
-                System.out.println("API Hatasi [" + errorType + "] algilandi" + causeMsg + ". " + sleepTime + "ms sonra tekrar denenecek (Deneme " + attempt + "/" + maxRetries + ").");
+                long jitter     = (long) (Math.random() * 500);
+                long sleepTime  = delayMs + jitter;
+                String errorType = isRateLimit ? "Rate Limit (429/Quota/ResourceExhausted)" : "Gecici Ag/IO Hatasi";
+                System.out.println("API Hatasi [" + errorType + "] algilandi. "
+                        + sleepTime + "ms sonra tekrar denenecek (Deneme " + attempt + "/" + maxRetries + ").");
                 Thread.sleep(sleepTime);
                 delayMs = (long) (delayMs * backoffFactor);
             }
         }
-        throw new Exception("Bilinmeyen bir hata nedeniyle API cagrısı basarısız oldu.");
+        throw lastException != null ? lastException
+                : new Exception("Bilinmeyen bir hata nedeniyle API cagrisi basarisiz oldu.");
     }
 }

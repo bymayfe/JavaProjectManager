@@ -222,7 +222,7 @@ public class AssistantPanel extends JPanel {
             String m = gptModelSupplier.get();
             modelName = "Custom API: " + (m == null || m.isEmpty() ? "gpt-4o-mini" : m);
         } else {
-            modelName = "Groq: llama-3.1-8b-instant";
+            modelName = "Groq: llama-3.3-70b-versatile";
         }
 
         lblActiveModel.setText("Aktif Model: " + modelName);

@@ -49,8 +49,7 @@ public class MongoDatabaseProvider implements DatabaseProvider {
         doc.append("sshHost", entry.sshHost);
         doc.append("sshPort", entry.sshPort);
         doc.append("sshUser", entry.sshUser);
-        doc.append("sshPass", entry.sshPass);
-        doc.append("sshPemPath", entry.sshPemPath);
+        // Guvenlik: sifre ve PEM yolu DB'ye yazilmaz
         doc.append("containerId", entry.containerId);
         doc.append("containerName", entry.containerName);
 
@@ -76,8 +75,8 @@ public class MongoDatabaseProvider implements DatabaseProvider {
         entry.sshHost = doc.getString("sshHost");
         entry.sshPort = doc.getString("sshPort");
         entry.sshUser = doc.getString("sshUser");
-        entry.sshPass = doc.getString("sshPass");
-        entry.sshPemPath = doc.getString("sshPemPath");
+        entry.sshPass       = null; // Guvenlik: DB'de saklanmaz
+        entry.sshPemPath    = null; // Guvenlik: DB'de saklanmaz
         entry.containerId = doc.getString("containerId");
         entry.containerName = doc.getString("containerName");
         return entry;
@@ -109,8 +108,8 @@ public class MongoDatabaseProvider implements DatabaseProvider {
         entry.sshHost       = project.getSshHost();
         entry.sshPort       = project.getSshPort();
         entry.sshUser       = project.getSshUser();
-        entry.sshPass       = project.getSshPass();
-        entry.sshPemPath    = project.getSshPemPath();
+        entry.sshPass       = null;    // Guvenlik: sifre DB'ye yazilmaz
+        entry.sshPemPath    = null;    // Guvenlik: PEM yolu DB'ye yazilmaz
         entry.containerId   = project.getContainerId();
         entry.containerName = project.getContainerName();
 

@@ -5,6 +5,7 @@
 [![Java Version](https://img.shields.io/badge/Java-11%2B-orange?logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Maven Build](https://img.shields.io/badge/Maven-3.x-blue?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.1-informational)](CHANGELOG.md)
 [![Platform Compatibility](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/bymayfe)
 
 Smart Project Manager is a comprehensive, modern **Java-based desktop application** designed to support the software development lifecycle. This project was developed as a term project for the developer's **Java Programming Course**. The concept, design, and codebase belong entirely to **Seyfettin Budak**.
@@ -16,12 +17,29 @@ It provides developers and project managers with a unified workspace to organize
 ## ✨ Features
 
 *   📂 **Project Workspace Management:** Create, edit, list, and persist local project workspaces using a clean data model.
-*   🧠 **AI-Powered Code Analysis (`AIAnalyzer`):** Integrated AI engine (Gemini, Groq, GPT) to analyze codebases for performance bottlenecks, security flaws, and syntax improvements.
+*   🧠 **AI-Powered Code Analysis (`AIAnalyzer`):** Integrated AI engine supporting **Gemini**, **Groq**, and **GPT/OpenAI-compatible** services. Analyzes codebases for performance bottlenecks, security vulnerabilities, and syntax improvements. Also auto-generates professional README files and project tags. See the [AI Services](#-ai-services--supported-models) section for supported models.
 *   🐳 **Docker Environment Scanner:** Scans local Docker containers, images, and networks to display their status directly inside a graphical dashboard.
 *   🐙 **Git & GitHub Workflows:** Stage, commit, and push repository changes dynamically without using external Git CLI commands, using pure JGit and GitHub API.
-*   🔒 **Remote Connection & SSH Management:** Establish secure SSH (JSch) connections to remote host machines, browse files, run commands in an embedded terminal, and run remote project analysis.
+*   🔒 **Remote Connection & SSH Management:** Establish secure SSH (JSch) connections to remote host machines, browse files, run commands in an embedded terminal, and run remote project analysis. Includes **rate-limit protection** (connection debounce + exponential backoff retry) to prevent SSH servers from blocking repeated connection attempts.
 *   💾 **Flexible Database Choices:** Dynamically choose and manage application persistence backends (MongoDB, MySQL, or embedded SQLite).
+*   👤 **Connection Profile System:** Save and restore multiple SSH/AI/database configuration profiles via `ConfigManager` — switch between environments in one click.
 *   🎨 **Modern User Interface:** Built on Java Swing & AWT, styled with the premium FlatLaf Look and Feel for high-definition (HiDPI) screens and smooth animations.
+
+---
+
+## 🤖 AI Services & Supported Models
+
+All AI features (code analysis, README generation, project tagging, assistant chat) are powered by the `AIAnalyzer` engine, which supports three provider families:
+
+| Provider | Service Key | Default Model | Notes |
+|----------|-------------|---------------|-------|
+| **Google Gemini** | `gemini` | `gemini-2.5-flash` | Configurable via settings |
+| **Groq** | `groq` | `llama-3.3-70b-versatile` | Best free-tier model; fast inference |
+| **OpenAI / GPT** | `gpt` | `gpt-4o-mini` | Full OpenAI API |
+| **Custom (OpenAI-Compatible)** | `custom` | Configurable | Works with any OpenAI-compatible endpoint (e.g. local Ollama, LM Studio) |
+
+> [!TIP]
+> For free usage, **Groq** with `llama-3.3-70b-versatile` provides the best balance of speed and quality. Sign up at [console.groq.com](https://console.groq.com) to get your free API key.
 
 ---
 
@@ -31,8 +49,8 @@ It provides developers and project managers with a unified workspace to organize
 *   **GUI Toolkit:** Java Swing & AWT (FlatLaf Modern Theme)
 *   **Databases:** SQLite, MySQL, and MongoDB
 *   **Version Control:** Eclipse JGit
-*   **SSH & Network:** JSch
-*   **AI Integration:** Google GenAI SDK & OpenAI standard API
+*   **SSH & Network:** JSch (with keepAlive, debounce & exponential backoff retry)
+*   **AI Integration:** Google GenAI SDK (Gemini) & OpenAI-compatible REST API (Groq, GPT, Custom)
 *   **Build System:** Maven 3.x
 
 ---
@@ -176,3 +194,9 @@ Follow these steps to package the project into release artifacts (.exe / .jar) f
 ## 📄 License
 
 This project is licensed under the **MIT License**. See the `LICENSE` file for more details.
+
+---
+
+## 📋 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full version history and release notes.

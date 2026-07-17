@@ -91,37 +91,80 @@ public class DockerScanner {
         return session;
     }
 
+    /**
+     * null ve bos String'i ayni sayarak gereksiz yeniden baglanmayi onler.
+     * Mevcut session saglikli ise geri dondurur; degilse temizleyip yenisini acar.
+     * Rate limit koruması: Session bozulursa 1500ms bekleyip bir kez retry yapar.
+     */
     private synchronized Session getOrCreateSession(String host, int port, String user, String pass, String pemPath) throws Exception {
-        if (activeSession != null && activeSession.isConnected() 
-                && Objects.equals(host, lastHost) 
-                && port == lastPort 
-                && Objects.equals(user, lastUser) 
-                && Objects.equals(pass, lastPass) 
-                && Objects.equals(pemPath, lastPemPath)) {
-            return activeSession;
+        // null -> "" normalize et; bu sayede null vs "" farki session'i gereksiz yeniden açmaz
+        String normPass    = (pass    == null) ? "" : pass;
+        String normPem     = (pemPath == null) ? "" : pemPath.trim();
+        String normHost    = (host    == null) ? "" : host.trim();
+        String normUser    = (user    == null) ? "" : user.trim();
+
+        boolean sameTarget = normHost.equals(lastHost != null ? lastHost : "")
+                && port == lastPort
+                && normUser.equals(lastUser != null ? lastUser : "")
+                && normPass.equals(lastPass != null ? lastPass : "")
+                && normPem.equals(lastPemPath != null ? lastPemPath : "");
+
+        if (activeSession != null && sameTarget) {
+            // isConnected() kontrolü + gerçek keepAlive ping ile session sağlığını doğrula
+            if (activeSession.isConnected()) {
+                try {
+                    activeSession.sendKeepAliveMsg();
+                    return activeSession; // Session saglikli, yeni baglanma
+                } catch (Exception e) {
+                    System.out.println("SSH keepAlive başarısız, session yenileniyor...");
+                    // Ping başarısız -> session gerçekte kopuk, yenile
+                }
+            }
         }
 
+        // Eskisini temizle
         if (activeSession != null) {
-            try {
-                activeSession.disconnect();
-            } catch (Exception e) {
-                // Ignore
-            }
+            try { activeSession.disconnect(); } catch (Exception ignored) {}
             activeSession = null;
         }
 
-        activeSession = openSshSession(host, port, user, pass, pemPath);
-        lastHost = host;
-        lastPort = port;
-        lastUser = user;
-        lastPass = pass;
-        lastPemPath = pemPath;
+        // Rate limit koruması: ilk denemede hata gelirse 1500ms bekleyip bir kez daha dene
+        try {
+            activeSession = openSshSession(normHost, port, normUser,
+                    normPass.isEmpty() ? null : normPass,
+                    normPem.isEmpty()  ? null : normPem);
+        } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            boolean isAuthOrRate = msg.contains("auth") || msg.contains("timeout")
+                    || msg.contains("connection refused") || msg.contains("too many");
+            if (!isAuthOrRate) {
+                // Geçici ağ hatası olabilir — 1500ms sonra bir kez daha dene
+                System.out.println("SSH bağlantı hatası, 1500ms sonra yeniden deneniyor: " + e.getMessage());
+                try { Thread.sleep(1500); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                activeSession = openSshSession(normHost, port, normUser,
+                        normPass.isEmpty() ? null : normPass,
+                        normPem.isEmpty()  ? null : normPem);
+            } else {
+                throw e; // Auth hatası ise direkt fırlat, retry gereksiz
+            }
+        }
+
+        lastHost    = normHost;
+        lastPort    = port;
+        lastUser    = normUser;
+        lastPass    = normPass;
+        lastPemPath = normPem;
         return activeSession;
     }
 
     /**
      * SSH uzerinden tek bir komut calistir ve sonucu dondur.
      * Hem stdout hem de stderr yakalanir; stderr varsa sonuna [STDERR]... eklenir.
+     */
+    /**
+     * SSH uzerinden tek bir komut calistir ve sonucu dondur.
+     * Hem stdout hem de stderr yakalanir; stderr varsa sonuna [HATA/UYARI]... eklenir.
+     * Busy-wait yerine blocking InputStream okuma kullanılır (daha az CPU).
      */
     public String executeSshCommand(String host, int port, String user, String pass, String pemPath,
                                     String command, boolean useSudo) throws Exception {
@@ -147,50 +190,43 @@ public class DockerScanner {
             InputStream in = channel.getInputStream();
             channel.connect();
 
-            StringBuilder outputBuffer = new StringBuilder();
-            byte[] tmp = new byte[4096];
-            while (true) {
-                while (in.available() > 0) {
-                    int i = in.read(tmp, 0, 4096);
-                    if (i < 0) break;
-                    outputBuffer.append(new String(tmp, 0, i, "UTF-8"));
-                }
-                if (channel.isClosed()) {
-                    if (in.available() > 0) continue;
-                    break;
-                }
-                Thread.sleep(100);
+            // Blocking okuma: available()+sleep busy-wait yerine doğrudan read() kullan
+            // Bu hem CPU'yu rahatlatır hem de büyük çıktıları doğru yakalar
+            ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+            byte[] tmp = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = in.read(tmp)) != -1) {
+                outBuffer.write(tmp, 0, bytesRead);
             }
             channel.disconnect();
 
-            // stderr varsa ve stdout bosse ya da anlamsizsa ekle
+            String outputStr = outBuffer.toString("UTF-8");
+
+            // stderr varsa filtrele ve ekle
             String errOutput = errBuffer.toString("UTF-8").trim();
-            // sudo sifre prompt satırlarini filtrele (sudo: password required gibi mesajlar)
             if (!errOutput.isEmpty()) {
-                // sudo'nun kendi mesajlarini (sudo: ...) goster ama sifre promptunu gizle
                 String filteredErr = errOutput
                         .replaceAll("(?m)^\\[sudo\\] .*\n?", "")
-                        .replaceAll("(?m)^sudo: .*\n?", "")  // sudo internal msgs
+                        .replaceAll("(?m)^sudo: .*\n?", "")
                         .trim();
                 if (!filteredErr.isEmpty()) {
-                    if (outputBuffer.length() > 0) {
-                        outputBuffer.append("\n");
-                    }
-                    outputBuffer.append("[HATA/UYARI] ").append(filteredErr);
+                    if (!outputStr.isEmpty()) outputStr += "\n";
+                    outputStr += "[HATA/UYARI] " + filteredErr;
                 }
             }
 
-            return outputBuffer.toString();
+            return outputStr;
         } catch (Exception ex) {
+            // Channel hatası session'ı geçersiz kılabilir — sıfırla ki bir sonraki çağrıda yeniden açılsın
             if (activeSession != null) {
-                try {
-                    activeSession.disconnect();
-                } catch (Exception e) {
-                    // Ignore
-                }
+                try { activeSession.disconnect(); } catch (Exception ignored) {}
                 activeSession = null;
             }
             throw ex;
+        } finally {
+            if (channel != null && channel.isConnected()) {
+                try { channel.disconnect(); } catch (Exception ignored) {}
+            }
         }
     }
 
@@ -493,7 +529,11 @@ public class DockerScanner {
                 throw new Exception(output.substring(output.indexOf("[HATA/UYARI]") + 12).trim());
             }
         }
-        return parseProjectsFromOutput(output, remotePath, "Docker SSH: " + containerName, SourceType.DOCKER,
+        // Container ismine temiz, okunabilir bir prefix olustur
+        // "python-analytics-wv470znoydrt7sb58sb9hs6i-203349874770" -> "python-analytics"
+        String cleanContainer = sanitizeContainerName(containerName);
+        String prefix = cleanContainer + " [SSH-Docker \u00b7 " + host + "]";
+        return parseProjectsFromOutput(output, remotePath, prefix, SourceType.DOCKER,
                 host, String.valueOf(port), user, pass, pemPath, containerId, containerName);
     }
 
@@ -538,7 +578,8 @@ public class DockerScanner {
                 throw new Exception(output.substring(output.indexOf("[HATA/UYARI]") + 12).trim());
             }
         }
-        return parseProjectsFromOutput(output, remotePath, "SSH: " + host, SourceType.SSH,
+        String prefix = "SSH \u00b7 " + host + " \u00b7 " + remotePath;
+        return parseProjectsFromOutput(output, remotePath, prefix, SourceType.SSH,
                 host, String.valueOf(port), user, pass, pemPath, null, null);
     }
 
@@ -556,6 +597,23 @@ public class DockerScanner {
             this.name     = name;
             this.fullPath = fullPath;
         }
+    }
+
+    /**
+     * Container isminden okunaksiz hash/ID kisimlarini atarak temiz bir isim uretir.
+     * Ornek: "python-analytics-wv470znoydrt7sb58sb9hs6i-203349874770" -> "python-analytics"
+     * Ornek: "my-app_1" -> "my-app"
+     */
+    private String sanitizeContainerName(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "container";
+        // Sondaki -<harf/rakam>+ blokunu at (Docker Compose uretilen hash sufixi)
+        String clean = raw.trim()
+                .replaceAll("-[a-z0-9]{10,}(?:-[0-9]+)?$", "") // Docker random suffix
+                .replaceAll("_[0-9]+$", "")                    // docker-compose replica index
+                .trim();
+        // Hala cok uzunsa ilk 30 karakteri al
+        if (clean.length() > 30) clean = clean.substring(0, 30);
+        return clean.isEmpty() ? raw.substring(0, Math.min(raw.length(), 30)) : clean;
     }
 
     private List<Project> parseProjectsFromOutput(String output, String remotePath, String prefix, SourceType sourceType) {

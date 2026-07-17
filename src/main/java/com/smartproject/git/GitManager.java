@@ -73,8 +73,8 @@ public class GitManager {
     public String commitAndPush(Project project, String username, String token, String remoteUrl) {
         File repoDir = project.getProjectFolder();
 
+        Git git = null;
         try {
-            Git git;
             File gitDir = new File(repoDir, ".git");
             if (!gitDir.exists()) {
                 git = Git.init().setDirectory(repoDir).call();
@@ -107,22 +107,23 @@ public class GitManager {
             if (username != null && !username.isEmpty() && token != null && !token.isEmpty()) {
                 if (!git.remoteList().call().isEmpty()) {
                     UsernamePasswordCredentialsProvider creds = new UsernamePasswordCredentialsProvider(username, token);
-                    PushCommand pushCommand = git.push().setCredentialsProvider(creds);
-                    pushCommand.call();
-                    git.close();
+                    git.push().setCredentialsProvider(creds).call();
                     return "✅ Başarılı! Değişiklikler commit edildi ve GitHub'a pushlandı.";
                 } else {
-                    git.close();
                     return "⚠️ Commit başarılı ancak Remote URL (GitHub linki) verilmediği için push yapılamadı.";
                 }
             } else {
-                git.close();
                 return "⚠️ Commit başarılı ancak Ayarlar'da GitHub kullanıcı adı/token olmadığı için push yapılamadı.";
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             return "❌ Git Hatası: " + e.getMessage();
+        } finally {
+            // git.close() her zaman çağrılır — kaynak sızıntısını önler
+            if (git != null) {
+                try { git.close(); } catch (Exception ignored) {}
+            }
         }
     }
 }
