@@ -1,122 +1,124 @@
 # 🚀 Smart Project Manager
 
+🌐 Read this in other languages: [Türkçe (Turkish)](README_TR.md)
+
 [![Java Version](https://img.shields.io/badge/Java-11%2B-orange?logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Maven Build](https://img.shields.io/badge/Maven-3.x-blue?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform Compatibility](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/bymayfe)
 
-Smart Project Manager, yazılım geliştirme projelerinin yaşam döngüsünü desteklemek üzere tasarlanmış, kapsamlı ve modern bir **Java tabanlı masaüstü uygulamasıdır**. Bu proje, geliştiricinin **Java Programlama Dersi** kapsamında geliştirdiği dönem projesidir. Projenin fikir sahibi ve baş geliştiricisi **Seyfettin Budak**'tır.
+Smart Project Manager is a comprehensive, modern **Java-based desktop application** designed to support the software development lifecycle. This project was developed as a term project for the developer's **Java Programming Course**. The concept, design, and codebase belong entirely to **Seyfettin Budak**.
 
-Geliştiricilere ve proje yöneticilerine; projelerini etkin bir şekilde yönetme, derinlemesine kod analizi yapma, Git/GitHub entegrasyonu sağlama ve Docker ortamlarını tarama gibi kritik süreçleri tek bir platform üzerinden yönetme imkanı sunar.
-
----
-
-## ✨ Temel Özellikler
-
-*   📂 **Kapsamlı Proje Yönetimi:** Proje oluşturma, düzenleme, listeleme ve kalıcı olarak depolama süreçlerini yöneten gelişmiş arayüz ve veri modeli.
-*   🧠 **Yapay Zeka Destekli Analiz (`AIAnalyzer`):** Yapay zeka motoru (Gemini, Groq, GPT) entegrasyonu ile kod tabanınızı analiz eder, performans darboğazlarını ve güvenlik açıklarını raporlar.
-*   🐳 **Docker Entegrasyonu ve Tarama:** Yerel Docker ortamındaki imajları, container'larını ve ağları tarayarak grafiksel arayüz üzerinden detaylı durum bilgisi sunar.
-*   🐙 **Git & GitHub Entegrasyonu:** JGit entegrasyonu sayesinde Git komutlarına gerek kalmadan değişiklikleri commit etme, depolara pushlama ve GitHub API üzerinden depo yönetimi yapabilme.
-*   🔒 **Uzak Bağlantı & SSH Yönetimi:** Uzak sunuculara veya Docker ana bilgisayarlarına güvenli SSH (JSch) bağlantısı kurarak oradaki dosyalara erişebilme, onları yerleşik konsol üzerinden kontrol edebilme ve uzak sunucudaki projeleri analiz ettirebilme desteği.
-*   💾 **Esnek Veritabanı Seçimi:** Uygulama verilerinin nerede saklanacağını (MongoDB, MySQL veya gömülü SQLite) dinamik olarak seçebilme ve yönetebilme desteği.
-*   🎨 **Modern Kullanıcı Arayüzü:** FlatLaf teması ile modern, göze hoş gelen ve yüksek çözünürlüklü (HiDPI) ekranlarla uyumlu kullanıcı dostu grafik arayüz.
+It provides developers and project managers with a unified workspace to organize projects, run deep AI code analyses, manage Git/GitHub workflows, and inspect local Docker environments.
 
 ---
 
-## 🛠️ Teknoloji Yığını
+## ✨ Features
 
-*   **Dil:** Java 11+
-*   **Grafik Arayüz:** Java Swing & AWT (FlatLaf Modern Teması ile)
-*   **Veritabanı Desteği:** SQLite, MySQL ve MongoDB
-*   **Sürüm Kontrolü:** Eclipse JGit
-*   **Ağ & Bağlantı:** JSch (SSH kütüphanesi)
-*   **Yapay Zeka:** Google GenAI SDK & OpenAI API standardı
-*   **Build Sistemi:** Maven 3.x
+*   📂 **Project Workspace Management:** Create, edit, list, and persist local project workspaces using a clean data model.
+*   🧠 **AI-Powered Code Analysis (`AIAnalyzer`):** Integrated AI engine (Gemini, Groq, GPT) to analyze codebases for performance bottlenecks, security flaws, and syntax improvements.
+*   🐳 **Docker Environment Scanner:** Scans local Docker containers, images, and networks to display their status directly inside a graphical dashboard.
+*   🐙 **Git & GitHub Workflows:** Stage, commit, and push repository changes dynamically without using external Git CLI commands, using pure JGit and GitHub API.
+*   🔒 **Remote Connection & SSH Management:** Establish secure SSH (JSch) connections to remote host machines, browse files, run commands in an embedded terminal, and run remote project analysis.
+*   💾 **Flexible Database Choices:** Dynamically choose and manage application persistence backends (MongoDB, MySQL, or embedded SQLite).
+*   🎨 **Modern User Interface:** Built on Java Swing & AWT, styled with the premium FlatLaf Look and Feel for high-definition (HiDPI) screens and smooth animations.
 
 ---
 
-## ⚙️ Proje Yapısı
+## 🛠️ Technology Stack
+
+*   **Language:** Java 11+
+*   **GUI Toolkit:** Java Swing & AWT (FlatLaf Modern Theme)
+*   **Databases:** SQLite, MySQL, and MongoDB
+*   **Version Control:** Eclipse JGit
+*   **SSH & Network:** JSch
+*   **AI Integration:** Google GenAI SDK & OpenAI standard API
+*   **Build System:** Maven 3.x
+
+---
+
+## ⚙️ Project Structure
 
 ```text
 javaProje/
-├── .mvn/                  # Maven Wrapper yapılandırması
+├── .mvn/                  # Maven Wrapper configuration files
 ├── src/
 │   ├── main/
 │   │   └── java/
 │   │       └── com/
 │   │           └── smartproject/
-│   │               ├── ai/         # Yapay zeka analiz motoru
-│   │               ├── config/     # Uygulama ayarları yönetimi
-│   │               ├── db/         # Veritabanı bağlantıları (SQL/NoSQL)
-│   │               ├── file/       # Dosya/Dizin yöneticileri
-│   │               ├── git/        # Git ve GitHub API entegrasyonu
-│   │               ├── gui/        # Swing arayüz bileşenleri ve pencereler
-│   │               ├── model/      # Temel veri modelleri (Project vb.)
-│   │               └── scanner/    # Docker tarama modülleri
-├── pom.xml                # Maven bağımlılıkları tanımları
-├── run.bat                # Windows için tek tıkla başlatıcı
-├── run.sh                 # Mac/Linux için tek tıkla başlatıcı
-└── README.md              # Proje dokümantasyonu
+│   │               ├── ai/         # AI analysis engine and assistants
+│   │               ├── config/     # Application configurations manager
+│   │               ├── db/         # SQL & NoSQL database providers
+│   │               ├── file/       # Local file & workspace helpers
+│   │               ├── git/        # JGit client and GitHub API manager
+│   │               ├── gui/        # Swing UI frames and dialogs
+│   │               ├── model/      # Base entities (Project, etc.)
+│   │               └── scanner/    # Docker and local directory scanners
+├── pom.xml                # Maven dependencies and build configuration
+├── run.bat                # One-click Windows starter script
+├── run.sh                 # One-click macOS/Linux starter script
+└── README.md              # Project documentation (English)
 ```
 
 ---
 
-## ⚙️ Nasıl Çalıştırılır ve Derlenir?
+## ⚙️ How to Compile & Run
 
-Smart Project Manager uygulamasını derlemek ve çalıştırmak için iki farklı yol (Arayüz Tıklamaları veya Komut Satırı) kullanabilirsiniz.
-
----
-
-### 🎮 Yöntem A: Arayüz (UI) Üzerinden Tıklayarak
-Eğer terminal kullanmak istemiyorsanız, geliştirme ortamınızın (IDE) grafik arayüzündeki hazır butonları kullanarak derleme ve çalıştırma yapabilirsiniz.
-
-<details>
-<summary><b>👁️ VS Code ile Tıklayarak Derleme & Çalıştırma (Açmak için tıklayın)</b></summary>
-
-1. **Projeyi Derleme (JAR Üretme):**
-   * Sol menüdeki **MAVEN** panelini genişletin.
-   * `SmartProjectManager` > `Lifecycle` klasörünü açın.
-   * Önce **`clean`** seçeneğinin, ardından **`package`** seçeneğinin yanındaki **Oynat (Run)** butonuna tıklayarak çalıştırın.
-2. **Projeyi Çalıştırma:**
-   * Proje dosyaları arasından `src/main/java/com/smartproject/Main.java` dosyasını bulun.
-   * Dosyayı açıp sağ üst köşedeki **Oynat (Run Java)** butonuna basarak programı başlatın.
-</details>
-
-<details>
-<summary><b>👁️ Apache NetBeans ile Tıklayarak Derleme & Çalıştırma (Açmak için tıklayın)</b></summary>
-
-1. **Projeyi Derleme (JAR Üretme):**
-   * Soldaki **Projects** panelinde projenizin adına (`SmartProjectManager`) sağ tıklayın.
-   * Menüden **"Clean and Build"** seçeneğini seçin. Maven projenizi otomatik derleyecektir.
-2. **Projeyi Çalıştırma:**
-   * Projenize sağ tıklayıp **"Run"** seçeneğini seçin veya klavyeden **F6** tuşuna basarak uygulamayı çalıştırın.
-</details>
+You can run or build the project using either Graphical IDE interfaces or Command Line instructions.
 
 ---
 
-### 💻 Yöntem B: Komut Satırı (Terminal) ile
-Terminal veya komut satırı kullanarak daha hızlı işlemler yapabilirsiniz.
+### 🎮 Method A: Using IDE Graphical Interfaces (GUI)
+If you prefer not to write terminal commands, you can build and run using your IDE's visual buttons.
 
-#### 1. Hızlı Başlatıcı Scriptleri (Maven Gerektirmez):
-Proje kök dizininde hazır bulunan scriptleri kullanarak tek tıkla çalıştırabilirsiniz:
-* **Windows için:** `run.bat` dosyasına çift tıklayın veya terminalden çalıştırın:
+<details>
+<summary><b>👁️ VS Code GUI Instructions (Click to expand)</b></summary>
+
+1. **Build Project (Generate JAR):**
+   * Expand the **MAVEN** explorer panel on the left sidebar.
+   * Go to `SmartProjectManager` > `Lifecycle` folder.
+   * Hover over **`clean`** and click the **Play** button, then hover over **`package`** and click the **Play** button.
+2. **Run Project:**
+   * Open the file `src/main/java/com/smartproject/Main.java`.
+   * Click the **Run Java** action/play button in the top-right corner of the editor.
+</details>
+
+<details>
+<summary><b>👁️ Apache NetBeans GUI Instructions (Click to expand)</b></summary>
+
+1. **Build Project (Generate JAR):**
+   * Right-click the project node (`SmartProjectManager`) in the **Projects** panel.
+   * Select **"Clean and Build"** from the context menu. Maven will automatically compile the JAR.
+2. **Run Project:**
+   * Right-click the project node and select **"Run"**, or press **F6** on your keyboard.
+</details>
+
+---
+
+### 💻 Method B: Using Command Line Interface (CLI)
+You can compile and run directly from your command shell/terminal.
+
+#### 1. Quick Bootstrap Scripts (No Maven setup required):
+Use the platform-specific scripts in the project root:
+* **For Windows:** Double-click `run.bat` or run:
   ```cmd
   .\run.bat
   ```
-* **Mac / Linux için:** Terminale sırasıyla şu komutları girin:
+* **For macOS / Linux:** Open your terminal and run:
   ```bash
   chmod +x run.sh
   ./run.sh
   ```
-*Bu scriptler bilgisayarınızda daha önceden derlenmiş bir sürüm (`target/` altında) bulursa doğrudan çalıştırır. Eğer yoksa, Maven Wrapper aracılığıyla otomatik olarak gerekli tüm bağımlılıkları indirip projeyi derler.*
+*These scripts search for a pre-compiled version inside `target/` first. If missing, they prompt you to automatically download the Maven Wrapper to compile and launch the project.*
 
-#### 2. Manuel Derleme ve Çalıştırma (Maven Wrapper ile):
-* **Windows:**
+#### 2. Manual Wrapper Build & Execute:
+* **Windows (CMD/PowerShell):**
   ```cmd
   mvnw.cmd clean package
   java -jar target/SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar
   ```
-* **Mac / Linux:**
+* **macOS / Linux (Terminal):**
   ```bash
   ./mvnw clean package
   java -jar target/SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar
@@ -124,58 +126,53 @@ Proje kök dizininde hazır bulunan scriptleri kullanarak tek tıkla çalıştı
 
 ---
 
-### 📦 Yöntem C: Manuel Sürüm (Release) Dosyaları Oluşturma
-Hocanıza göndereceğiniz veya GitHub Sürümlerine (Releases) yükleyeceğiniz dosyaları hazırlama adımları:
+### 📦 Method C: Manual Release Packaging
+Follow these steps to package the project into release artifacts (.exe / .jar) for distribution:
 
 > [!NOTE]
-> Her işletim sistemi (Windows, macOS, Linux) için sadece ortak **JAR** dosyasını (`SmartProjectManager-CrossPlatform.jar`) paylaşmak veya kullanmak da tamamen yeterlidir (bu durumda hedef bilgisayarda en az Java 11 kurulu olması gerekir). İşletim sistemlerine özel yerel paketler (EXE, APP, DEB) oluşturmak isteğe bağlıdır.
+> Distributing the cross-platform **JAR** file (`SmartProjectManager-CrossPlatform.jar`) is completely sufficient for Windows, macOS, and Linux, provided that the target computer has at least Java 11 installed. Creating native bundles (EXE, APP, DEB) is optional.
 
-
-
-1. **JAR Dosyasını Derleyin:**
-   * **Arayüzden:** VS Code Maven panelinden `package` veya NetBeans'ten `Clean and Build` yapın.
-   * **Terminalden:** `mvnw.cmd clean package` (Windows) veya `./mvnw clean package` (Mac/Linux) çalıştırın.
-2. **Mac ve Linux Sürümünü Hazırlayın:**
-   * `target/` içinde oluşan JAR dosyasını kopyalayıp `dist/` klasörünün içerisine yapıştırın ve adını **`SmartProjectManager-CrossPlatform.jar`** yapın.
-3. **Sistem Kurulum & Çalıştırılabilir Paketlerini Derleyin (jpackage):**
-   *jpackage aracı çapraz derlemeyi desteklemez; hangi sistem için paket üretecekseniz o işletim sisteminde bu komutu çalıştırmalısınız:*
-   * **Windows (.exe - Taşınabilir Klasör):**
-     Terminalden şu komutla yerel Windows uygulaması oluşturun:
+1. **Compile the JAR:**
+   * **Via GUI:** Use `package` in VS Code Maven panel or `Clean and Build` in NetBeans.
+   * **Via CLI:** Run `mvnw.cmd clean package` (Windows) or `./mvnw clean package` (Mac/Linux).
+2. **Prepare the Cross-Platform Release JAR:**
+   * Copy the fat JAR generated in `target/` to the `dist/` directory and rename it to **`SmartProjectManager-CrossPlatform.jar`**.
+3. **Compile Native Installer Bundles (jpackage):**
+   *Note: Cross-compilation is not supported by jpackage. You must run these commands on the corresponding host system:*
+   * **Windows (.exe - Portable Folder):**
+     Create a native Windows executable and bundled JRE:
      ```cmd
      "C:\Program Files\Java\jdk-26.0.1\bin\jpackage.exe" --input target\ --dest dist\ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
      ```
-   * **macOS (.app Uygulaması):**
-     Mac terminalinde şu komutla taşınabilir uygulama paketi üretebilirsiniz:
+   * **macOS (.app Bundle):**
+     Generate a native Mac executable structure:
      ```bash
      jpackage --input target/ --dest dist/ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
      ```
-     *(Eğer disk resmi kurulum paketi üretmek isterseniz `--type app-image` yerine `--type dmg` parametresini kullanabilirsiniz).*
-   * **Linux (.deb / Kurulum Paketi):**
-     Linux terminalinde şu komutla Debian paketi üretebilirsiniz:
+     *(Use `--type dmg` if you prefer to generate a native drag-and-drop installer image).*
+   * **Linux (.deb Installer Package):**
+     Generate a Debian installation package:
      ```bash
      jpackage --input target/ --dest dist/ --name smartprojectmanager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type deb
      ```
-4. **Taşınabilir Sürümü Sıkıştırın (ZIP / TAR.GZ):**
-   * **Windows'ta (Sağ Tıkla):** `dist/` klasöründeki `SmartProjectManager` klasörüne **sağ tıklayarak ZIP dosyasına sıkıştırın** ve adını `SmartProjectManager-Windows-Portable.zip` yapın.
-   * **Mac / Linux'ta (Terminalden):** Terminalden şu komutla sıkıştırın:
+4. **Compress Portable Builds (ZIP / TAR.GZ):**
+   * **On Windows (Explorer):** Right-click the folder `dist/SmartProjectManager` -> **Send to Compressed (zipped) folder** (or **Compress to ZIP file**) and rename it to `SmartProjectManager-Windows-Portable.zip`.
+   * **On macOS / Linux (Terminal):** Archive using tar:
      ```bash
      tar -czvf dist/SmartProjectManager-Portable.tar.gz -C dist SmartProjectManager
      ```
 
-
-
-
 ---
 
-## 👥 Yazarlar ve Katkıda Bulunanlar
+## 👥 Authors & Contributors
 
-*   **Seyfettin Budak** - *Proje Fikri, Tasarım ve Baş Geliştirici (Lead Developer)* - [bymayfe](https://github.com/bymayfe)
+*   **Seyfettin Budak** - *Project Concept, Design, and Lead Developer* - [bymayfe](https://github.com/bymayfe)
 
 > [!IMPORTANT]
-> Bu proje, yazarın **Java Programlama Dersi** için dönem projesi olarak geliştirilmiştir. Projenin tüm fikir hakları, özgün tasarımı ve kod geliştirmesi tamamen **Seyfettin Budak**'a aittir.
+> This project was developed as a term project for the author's **Java Programming Course**. All rights, conceptual designs, and source implementations belong entirely to **Seyfettin Budak**.
 
 ---
 
-## 📄 Lisans
+## 📄 License
 
-Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına göz atabilirsiniz.
+This project is licensed under the **MIT License**. See the `LICENSE` file for more details.
