@@ -6,6 +6,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.0] — 2026-08-14
+
+### ✨ AI & Intelligence Improvements
+- **[AIAnalyzer] Generalized System Prompt** — Removed hardcoded "Sertifika/QR/TC" examples from the analysis prompt. The AI now evaluates every project dynamically without making domain-specific hallucinations.
+- **[AIAnalyzer] Improved Python Dependency Extraction** — Massively expanded the `PYTHON_STDLIB` list. Standard library imports are now thoroughly filtered out, ensuring only actual 3rd party libraries are detected and persisted.
+- **[ProjectAssistant] Restructured Memory Architecture** — Fixed the "Lost in the middle" memory issue where the AI would forget its core instructions and claim "no projects found." The system prompt was completely redesigned to place the massive `<veritabani_projeleri>` context at the top, and strict rules at the bottom.
+- **[ProjectAssistant] Expanded Context Window** — Increased the project README context limit sent to the AI from 800 to 3500 characters. The AI can now read full project features and make realistic, deep inferences rather than just reading titles.
+- **[ProjectAssistant] Smart Technology Matching** — Instructed the AI to understand semantic relationships between technologies (e.g., matching XAI with SHAP/LIME) and strictly enforce searching across tags, languages, and 3rd party libraries before claiming something is missing.
+
+### 🎨 UI & UX Redesign
+- **[AssistantPanel] HTML Unified Chat Interface** — Completely replaced the clunky `JTextArea` message bubbles with a unified `JTextPane` running HTML. Users can now seamlessly highlight and copy text across the entire chat history.
+- **[AssistantPanel] Markdown Formatting Support** — The AI Assistant now renders beautiful text with Markdown parsing (`**bold**` transforms into `<b>bold</b>`, and inline `` `code` `` blocks are styled with background colors).
+- **[AssistantPanel] Modern Chat Layout** — User bubbles are now perfectly constrained to a maximum width (70%) and cleanly right-aligned using HTML tables, matching modern messaging app aesthetics.
+- **[MainGUI] Detailed Project Selection Panel** — Selecting a project now displays its absolute path and activates contextual navigation buttons (Go Up, Go Down, Open Folder) in the UI, dynamically disabling them when multiple or no projects are selected.
+
+### 🚀 Core Scanner Improvements
+- **[ProjectScanner] Advanced Nested Project Detection** — Completely overhauled the directory scanner to handle monorepos and deeply nested workspaces. The scanner now actively looks for explicit manifest files (`package.json`, `pom.xml`, `requirements.txt`, `docker-compose.yml`, etc.) and correctly identifies sub-projects without falsely grouping them under a single root folder.
+- **[ProjectScanner] Expanded Ignore List** — Added `venv`, `.venv`, `env`, `.env`, `site-packages`, `__pycache__`, `.next`, `.nuxt`, `.turbo`, `dist`, `out`, `bin`, and `.cache` to the directory ignore list to massively speed up scan times and prevent irrelevant file indexing.
+
+### 🐛 Bug Fixes
+- **[AIAnalyzer] Robust Markdown Parsing** — Fixed a bug where generated README outputs containing extra text before or after the markdown block would break the UI. It now safely extracts contents between ` ```markdown ` and ` ``` `.
+- **[AIAnalyzer] File Responsibility Hallucinations** — The `buildVerifiedProjeYapısıSection` now accurately maps files to "Proje kaynak dosyası." instead of hallucinating complex, non-existent workflows for every simple script.
+
+---
+
 ## [1.1.1] — 2026-07-17
 
 ### 🔒 Security

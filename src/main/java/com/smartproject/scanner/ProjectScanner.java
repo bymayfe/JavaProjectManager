@@ -10,7 +10,12 @@ import java.util.List;
 public class ProjectScanner {
 
     // İgnore edilecek, taranmayacak klasörler
-    private static final List<String> IGNORED_DIRS = Arrays.asList(".git", "node_modules", "target", "build", ".idea", ".spm", "venv");
+    private static final List<String> IGNORED_DIRS = Arrays.asList(
+            ".git", "node_modules", "target", "build", ".idea", ".spm", "venv", ".venv",
+            "env", ".env", "site-packages", "__pycache__", ".settings", ".classpath",
+            ".project", "bin", "out", "dist", ".gradle", ".next", ".nuxt", ".turbo",
+            ".cache", "coverage", ".output", "static"
+    );
 
     public List<Project> scanDirectory(File rootDir) {
         List<Project> projects = new ArrayList<>();
@@ -18,57 +23,109 @@ public class ProjectScanner {
             return projects;
         }
 
-        // Kök dizinden başlayarak projeleri derinlemesine (recursive) ara
         findProjectsRecursively(rootDir, projects);
         return projects;
     }
 
-    private void findProjectsRecursively(File dir, List<Project> projects) {
-        if (dir == null || !dir.isDirectory() || IGNORED_DIRS.contains(dir.getName())) {
+    private void findProjectsRecursively(File dir, List<Project> dirProjects) {
+        if (dir == null || !dir.isDirectory()) return;
+        String dirName = dir.getName().toLowerCase();
+        if (IGNORED_DIRS.contains(dirName)) return;
+
+        // 1. Eger alt klasorlerinde acik (explicit) proje manifest dosyalari (package.json, pom.xml vb.) olan projeler varsa
+        // bu klasor bir workspace / projeler konteyneridir. Alt klasorleri tara.
+        List<File> childProjectDirs = getChildDirsWithManifests(dir);
+        if (!childProjectDirs.isEmpty()) {
+            File[] subDirs = dir.listFiles(File::isDirectory);
+            if (subDirs != null) {
+                for (File childDir : subDirs) {
+                    findProjectsRecursively(childDir, dirProjects);
+                }
+            }
             return;
         }
 
+        // 2. Alt klasorlerde ayri manifestli proje yoksa ve bu klasor bir proje ise (manifest'i var veya icinde kod dosyasi var)
         if (isProjectRoot(dir)) {
-            // Eğer burası bir projenin ana klasörüyse, projeyi oluştur ve alt klasörlerde başka proje arama.
             Project project = checkAndCreateProject(dir);
             if (project != null) {
-                projects.add(project);
+                dirProjects.add(project);
             }
-        } else {
-            // Eğer proje kökü değilse (örn: Masaüstü veya Period 8 klasörü), içindeki klasörleri tek tek gez.
-            File[] subDirs = dir.listFiles(File::isDirectory);
-            if (subDirs != null) {
-                for (File subDir : subDirs) {
-                    findProjectsRecursively(subDir, projects);
-                }
+            // Proje olarak eklendi, alt klasorlerine (components, src, providers, app vb.) proje aramak icin GIRME!
+            return;
+        }
+
+        // 3. Proje kok degilse alt klasorleri tara
+        File[] subDirs = dir.listFiles(File::isDirectory);
+        if (subDirs != null) {
+            for (File subDir : subDirs) {
+                findProjectsRecursively(subDir, dirProjects);
             }
         }
     }
 
-    private boolean isProjectRoot(File dir) {
+    /**
+     * Klasorun icindeki 1 seviye alt klasorlerden hangilerinin kendine ait manifest dosyasi (package.json, pom.xml vb.) var?
+     */
+    private List<File> getChildDirsWithManifests(File dir) {
+        List<File> list = new ArrayList<>();
+        File[] subDirs = dir.listFiles(File::isDirectory);
+        if (subDirs == null) return list;
+
+        for (File subDir : subDirs) {
+            String name = subDir.getName().toLowerCase();
+            if (IGNORED_DIRS.contains(name)) continue;
+
+            if (hasManifestFile(subDir)) {
+                list.add(subDir);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Bir klasorde acik proje tanimlama dosyasi (package.json, pom.xml, requirements.txt, .spm vb.) var mi?
+     */
+    private boolean hasManifestFile(File dir) {
         File[] files = dir.listFiles();
         if (files == null) return false;
 
-        boolean hasCodeFile = false;
         for (File f : files) {
-            String name = f.getName().toLowerCase();
+            String fname = f.getName().toLowerCase();
             if (f.isDirectory()) {
-                // Yaygın proje klasörleri
-                if (name.equals(".git") || name.equals("src") || name.equals(".idea") || name.equals("node_modules")) {
+                if (fname.equals(".spm") || fname.equals(".git")) {
                     return true;
                 }
             } else {
-                // Yaygın proje dosyaları
-                if (name.equals("pom.xml") || name.equals("package.json") || name.equals("build.gradle") || name.equals("requirements.txt") || name.equals(".gitignore") || name.equals("docker-compose.yml") || name.equals("docker-compose.yaml") || name.equals("dockerfile")) {
+                if (fname.equals("pom.xml") || fname.equals("package.json") || fname.equals("build.gradle") ||
+                    fname.equals("build.gradle.kts") || fname.equals("requirements.txt") || fname.equals("pyproject.toml") ||
+                    fname.equals("pipfile") || fname.equals("go.mod") || fname.equals("cargo.toml") ||
+                    fname.equals("dockerfile") || fname.equals("docker-compose.yml") || fname.equals("docker-compose.yaml")) {
                     return true;
-                }
-                // Veya klasörün doğrudan içinde kod dosyası varsa
-                if (detectLanguage(name) != null) {
-                    hasCodeFile = true;
                 }
             }
         }
-        return hasCodeFile;
+        return false;
+    }
+
+    private boolean isProjectRoot(File dir) {
+        if (dir == null || !dir.isDirectory()) return false;
+
+        // Eger manifest varsa kesinlikle proje kokudur
+        if (hasManifestFile(dir)) {
+            return true;
+        }
+
+        // Manifest yoksa ama klasorun dogrudan icinde (src haric kendisinde) kaynak kod dosyasi varsa
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (!f.isDirectory() && detectLanguage(f.getName()) != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Project checkAndCreateProject(File dir) {

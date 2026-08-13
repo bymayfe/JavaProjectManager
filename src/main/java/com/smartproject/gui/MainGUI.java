@@ -79,6 +79,10 @@ public class MainGUI extends JFrame {
     private JButton btnAnalyzeBatch;   // Secili projeleri sirayla analiz
     private JButton btnGitCommit;
     private JButton btnDockerScan;
+    private JButton btnGoUp;
+    private JButton btnGoDown;
+    private JButton btnOpenFolder;
+    private JLabel lblPathInfo;
 
     // --- Detay & Etiket Paneli ---
     private JLabel lblDetailName;
@@ -114,7 +118,7 @@ public class MainGUI extends JFrame {
 
         initUI();
         loadConfig();          // Kayitli ayarlari yukle
-        loadFromDatabase();    // Eski projeleri yukle
+        refreshDbInfo();       // DB bilgisini guncelle (Projeler listesi bos baslar)
     }
 
     // ====================================================
@@ -178,9 +182,10 @@ public class MainGUI extends JFrame {
 
         JButton btnClearList = new JButton("Listeyi Temizle");
         btnClearList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnClearList.setToolTipText("Ekranda listelenen projeleri temizler (Veritabanindaki kayitlar korunur)");
         btnClearList.addActionListener(e -> {
             listModel.clear();
-            log("Liste temizlendi.");
+            log("Liste temizlendi (Veritabani kayitlari korundu).");
         });
 
         topPanel.add(btnSelectFolder);
@@ -199,17 +204,63 @@ public class MainGUI extends JFrame {
         split.setDividerLocation(280);
         split.setContinuousLayout(true);
 
-        // Sol: Proje listesi - COKLU SECIM
+        // Sol: Proje listesi ve Gezinim Paneli
         listModel = new DefaultListModel<>();
         projectJList = new JList<>(listModel);
         projectJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         projectJList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         projectJList.addListSelectionListener(new ProjectSelectionListener());
-        projectJList.setToolTipText("Ctrl veya Shift ile birden fazla proje secebilirsiniz");
+        projectJList.setToolTipText("Çift tıklayarak klasör içine girebilirsiniz");
+        projectJList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    navigateToChildFolder();
+                }
+            }
+        });
+
+        // Gezinme paneli
+        JPanel navPanel = new JPanel(new BorderLayout(4, 4));
+        navPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
+
+        JPanel navBtns = new JPanel(new GridLayout(1, 3, 3, 0));
+        btnGoUp = new JButton(" Ust Klasor");
+        btnGoUp.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnGoUp.setToolTipText("Secili ogenin bir ust klasor seviyesine cikip tara");
+        btnGoUp.setEnabled(false);
+        btnGoUp.addActionListener(ev -> navigateToParentFolder());
+
+        btnGoDown = new JButton(" Alt Klasor");
+        btnGoDown.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnGoDown.setToolTipText("Secili ogenin icine girip alt klasorlerini tara");
+        btnGoDown.setEnabled(false);
+        btnGoDown.addActionListener(ev -> navigateToChildFolder());
+
+        btnOpenFolder = new JButton(" Klasorde Ac");
+        btnOpenFolder.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnOpenFolder.setToolTipText("Secili proje klasorunu bilgisayarinizda acilmasini saglar");
+        btnOpenFolder.setEnabled(false);
+        btnOpenFolder.addActionListener(ev -> openSelectedFolderInExplorer());
+
+        navBtns.add(btnGoUp);
+        navBtns.add(btnGoDown);
+        navBtns.add(btnOpenFolder);
+        navPanel.add(navBtns, BorderLayout.NORTH);
+
+        lblPathInfo = new JLabel(" ");
+        lblPathInfo.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblPathInfo.setForeground(Color.GRAY);
+        navPanel.add(lblPathInfo, BorderLayout.SOUTH);
+
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(navPanel, BorderLayout.NORTH);
 
         JScrollPane listScroll = new JScrollPane(projectJList);
         listScroll.setBorder(BorderFactory.createTitledBorder("Projeler"));
-        split.setLeftComponent(listScroll);
+        leftPanel.add(listScroll, BorderLayout.CENTER);
+
+        split.setLeftComponent(leftPanel);
 
         // Sag: Detay + Etiket paneli (dikey split)
         JSplitPane rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -815,7 +866,7 @@ public class MainGUI extends JFrame {
 
         if (repository != null) {
             repository.refreshProvider();
-            loadFromDatabase();
+            refreshDbInfo();
             loadDatabaseTab();
         }
     }
@@ -858,7 +909,6 @@ public class MainGUI extends JFrame {
         config.save();
         repository.refreshProvider(); // Refresh active database connection pool
         refreshDbInfo();             // Refresh connection path/status label
-        loadFromDatabase();          // Reload Projects tab list
         loadDatabaseTab();           // Reload Veritabanı tab list
 
         if (assistantPanel != null) {
@@ -916,9 +966,19 @@ public class MainGUI extends JFrame {
                 try {
                     List<Project> projects = get();
                     listModel.clear();
+                    List<ProjectRepository.ProjectEntry> existingEntries = repository.getAllEntries();
                     for (Project p : projects) {
+                        if (existingEntries != null) {
+                            for (ProjectRepository.ProjectEntry entry : existingEntries) {
+                                Project existingProj = new Project(entry);
+                                if (p.getUniqueKey().equals(existingProj.getUniqueKey())) {
+                                    p = existingProj;
+                                    p.repopulateLocalSourceFiles();
+                                    break;
+                                }
+                            }
+                        }
                         listModel.addElement(p);
-                        // DB'ye KAYDETME - sadece analiz sonrasi kaydedilecek!
                     }
                     log("Tarama tamamlandi! " + projects.size() + " proje bulundu.");
                     log("Not: Projeler analiz edildikten sonra veritabanina kaydedilir.");
@@ -957,14 +1017,16 @@ public class MainGUI extends JFrame {
 
             @Override protected void done() {
                 try {
-                    get(); // exception varsa fiyatlatir
+                    get(); // exception varsa firlatir
 
                     // README'yi kaydet
                     fileManager.saveAnalysisResult(p, readme);
                     p.setDescription(readme.substring(0, Math.min(readme.length(), 300)));
+                    p.updateScanDate();
 
-                    // Otomatik taglari ekle (varsa)
-                    if (autoTags != null) {
+                    // Otomatik taglari yenile (varsa eskileri temizle)
+                    if (autoTags != null && !autoTags.isEmpty()) {
+                        p.getTags().clear();
                         for (String t : autoTags) p.addTag(t);
                     }
 
@@ -972,11 +1034,28 @@ public class MainGUI extends JFrame {
                     repository.saveProject(p);
                     refreshDbInfo();
 
+                    // Zengin proje detaylarini cikar ve DB'ye kaydet
+                    ProjectRepository.ProjectDetails details = aiAnalyzer.extractProjectDetails(p);
+                    details.readmeContent = readme; // Tam README icerigi de kaydedilsin
+                    repository.updateProjectDetails(p.getId(), details);
+
                     String tagStr = p.getTags().isEmpty() ? "" : "  Etiketler: " + String.join(", ", p.getTags());
                     if (toplam > 1) {
                         log("[" + index + "/" + toplam + "] Tamamlandi: " + p.getDisplayName() + tagStr);
                     } else {
                         log("Analiz tamamlandi: " + p.getDisplayName() + tagStr);
+                        // Detay ozeti logla
+                        if (!details.thirdPartyLibs.isEmpty()) {
+                            log("  3. Parti Kutuphaneler: " + String.join(", ", details.thirdPartyLibs));
+                        }
+                        if (!details.csvColumns.isEmpty()) {
+                            for (Map.Entry<String, List<String>> e : details.csvColumns.entrySet()) {
+                                log("  CSV Sutunlari [" + e.getKey() + "]: " + String.join(", ", e.getValue()));
+                            }
+                        }
+                        if (details.hasHardcodedSecrets) {
+                            log("  ⚠ Hardcoded secret tespit edildi.");
+                        }
                     }
 
                     // Secili proje guncellendiyse detay panelini yenile
@@ -1085,7 +1164,11 @@ public class MainGUI extends JFrame {
                     get();
                     fileManager.saveAnalysisResult(p, readme);
                     p.setDescription(readme.substring(0, Math.min(readme.length(), 300)));
-                    if (autoTags != null) for (String t : autoTags) p.addTag(t);
+                    p.updateScanDate();
+                    if (autoTags != null && !autoTags.isEmpty()) {
+                        p.getTags().clear();
+                        for (String t : autoTags) p.addTag(t);
+                    }
                     repository.saveProject(p);
                     refreshDbInfo();
                     
@@ -1159,6 +1242,101 @@ public class MainGUI extends JFrame {
         });
     }
 
+    private void navigateToParentFolder() {
+        Project selected = projectJList.getSelectedValue();
+        int selectedIndex = projectJList.getSelectedIndex();
+        if (selected == null || selected.getProjectFolder() == null) {
+            JOptionPane.showMessageDialog(this, "Lutfen listeden yerel bir proje secin.", "Uyari", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        File parentDir = selected.getProjectFolder().getParentFile();
+        if (parentDir == null || !parentDir.exists()) {
+            JOptionPane.showMessageDialog(this, "Ust klasor bulunamadi.", "Uyari", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Secili ogenin projesini in-place olarak ust klasore tasi (sol listeyi SIFIRLAMA)
+        selected.setProjectFolder(parentDir);
+        listModel.set(selectedIndex, selected);
+        projectJList.setSelectedIndex(selectedIndex);
+
+        log("Secili ogenin dizini ust seviyeye tasindi: " + selected.getDisplayName());
+    }
+
+    private void navigateToChildFolder() {
+        Project selected = projectJList.getSelectedValue();
+        int selectedIndex = projectJList.getSelectedIndex();
+        if (selected == null || selected.getProjectFolder() == null) {
+            JOptionPane.showMessageDialog(this, "Lutfen listeden yerel bir proje secin.", "Uyari", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        File currentDir = selected.getProjectFolder();
+        File[] subDirs = currentDir.listFiles(File::isDirectory);
+        List<File> validSubDirs = new ArrayList<>();
+        List<String> IGNORED_NAMES = Arrays.asList(
+                ".git", "node_modules", "target", "build", ".idea", ".spm", "venv", ".venv",
+                "env", ".env", "site-packages", "__pycache__", ".settings", ".classpath",
+                ".project", "bin", "out", "dist", ".gradle", ".next", ".nuxt", ".turbo",
+                ".cache", "coverage", ".output", "static"
+        );
+
+        if (subDirs != null) {
+            for (File s : subDirs) {
+                if (!IGNORED_NAMES.contains(s.getName().toLowerCase())) {
+                    validSubDirs.add(s);
+                }
+            }
+        }
+
+        if (validSubDirs.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Secili projenin icinde gecerli bir alt klasor bulunamadi.", "Bilgi", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        File targetChild;
+        if (validSubDirs.size() == 1) {
+            targetChild = validSubDirs.get(0);
+        } else {
+            String[] options = new String[validSubDirs.size()];
+            for (int i = 0; i < validSubDirs.size(); i++) {
+                options[i] = validSubDirs.get(i).getName();
+            }
+            String chosen = (String) JOptionPane.showInputDialog(this,
+                    "Hangi alt klasore girilsin?", "Alt Klasor Secin",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            if (chosen == null) return;
+
+            targetChild = new File(currentDir, chosen);
+        }
+
+        // Secili ogenin projesini in-place olarak alt klasore tasi (sol listeyi SIFIRLAMA)
+        selected.setProjectFolder(targetChild);
+        listModel.set(selectedIndex, selected);
+        projectJList.setSelectedIndex(selectedIndex);
+
+        log("Secili ogenin dizini alt seviyeye indirildi: " + selected.getDisplayName());
+    }
+
+    private void openSelectedFolderInExplorer() {
+        Project selected = projectJList.getSelectedValue();
+        if (selected == null || selected.getProjectFolder() == null) {
+            JOptionPane.showMessageDialog(this, "Lutfen listeden yerel bir proje secin.", "Uyari", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        File folder = selected.getProjectFolder();
+        if (!folder.exists()) {
+            JOptionPane.showMessageDialog(this, "Klasor bulunamadi: " + folder.getAbsolutePath(), "Hata", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            Desktop.getDesktop().open(folder);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Klasor acilamadi: " + ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     // ====================================================
     // Listener: Projeden birini secince detaylari goster
     // ====================================================
@@ -1175,9 +1353,21 @@ public class MainGUI extends JFrame {
             btnAnalyzeBatch.setEnabled(selected.size() > 1);
             btnGitCommit.setEnabled(hasOne);
 
+            Project sel = hasOne ? selected.get(0) : null;
+            boolean hasLocal = sel != null && sel.getProjectFolder() != null && sel.getProjectFolder().exists();
+            if (btnGoUp != null) btnGoUp.setEnabled(hasLocal && sel.getProjectFolder().getParentFile() != null);
+            if (btnGoDown != null) btnGoDown.setEnabled(hasLocal);
+            if (btnOpenFolder != null) btnOpenFolder.setEnabled(hasLocal);
+            if (lblPathInfo != null) {
+                if (sel != null) {
+                    lblPathInfo.setText(" Yol: " + sel.getAbsolutePath());
+                } else {
+                    lblPathInfo.setText(" ");
+                }
+            }
+
             // Detay paneli: sadece tek secimde goster
             if (!hasOne) return;
-            Project sel = selected.get(0);
 
             lblDetailName.setText("Proje: " + sel.getDisplayName());
             lblDetailPath.setText("Yol: " + sel.getAbsolutePath());

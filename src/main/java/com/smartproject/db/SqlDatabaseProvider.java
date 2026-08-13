@@ -150,6 +150,38 @@ public class SqlDatabaseProvider implements DatabaseProvider {
     }
 
     @Override
+    public void updateProjectDetails(String projectId, ProjectRepository.ProjectDetails details) throws Exception {
+        // Sutunlarin var oldugundan emin ol (ALTER TABLE idempotent yapmak icin try-catch)
+        try (Connection conn = getConnection(); Statement st = conn.createStatement()) {
+            try { st.execute("ALTER TABLE projects ADD COLUMN thirdPartyLibs TEXT"); } catch (Exception ignored) {}
+            try { st.execute("ALTER TABLE projects ADD COLUMN csvColumns TEXT"); } catch (Exception ignored) {}
+            try { st.execute("ALTER TABLE projects ADD COLUMN readmeContent TEXT"); } catch (Exception ignored) {}
+            try { st.execute("ALTER TABLE projects ADD COLUMN runCommands TEXT"); } catch (Exception ignored) {}
+            try { st.execute("ALTER TABLE projects ADD COLUMN hasHardcodedSecrets INTEGER DEFAULT 0"); } catch (Exception ignored) {}
+        }
+
+        // Detaylari JSON string olarak serialize et
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        String libsJson  = gson.toJson(details.thirdPartyLibs);
+        String csvJson   = gson.toJson(details.csvColumns);
+        String cmdsJson  = gson.toJson(details.runCommands);
+        int secretsInt   = details.hasHardcodedSecrets ? 1 : 0;
+        String readme    = details.readmeContent != null ? details.readmeContent : "";
+
+        String sql = "UPDATE projects SET thirdPartyLibs = ?, csvColumns = ?, readmeContent = ?, runCommands = ?, hasHardcodedSecrets = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, libsJson);
+            ps.setString(2, csvJson);
+            ps.setString(3, readme);
+            ps.setString(4, cmdsJson);
+            ps.setInt(5, secretsInt);
+            ps.setString(6, projectId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
     public void deleteById(String projectId) throws Exception {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM projects WHERE id = ?")) {

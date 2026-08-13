@@ -33,10 +33,34 @@ public class ProjectRepository {
         public String containerId;
         public String containerName;
 
+        // --- Zengin Proje Detaylari (README analizi sonrasi doldurulur) ---
+        public List<String> thirdPartyLibs;           // 3. parti kutuphaneler (pandas, Pillow, requests, ...)
+        public Map<String, List<String>> csvColumns;  // Dosya bazinda CSV sutun isimleri
+        public String readmeContent;                  // Olusturulan README'nin tam icerigi
+        public Map<String, String> runCommands;       // Dosya bazinda calistirma komutlari
+        public boolean hasHardcodedSecrets;           // Kodda hardcoded secret var mi?
+
         public ProjectEntry() {
             languages = new ArrayList<>();
             tags = new ArrayList<>();
+            thirdPartyLibs = new ArrayList<>();
+            csvColumns = new LinkedHashMap<>();
+            runCommands = new LinkedHashMap<>();
         }
+    }
+
+    /**
+     * README analizi sirasinda kaynak koddan cikarilan zengin proje detaylarini tutar.
+     * analyzeProject() tamamlandiginda DB'ye yazilir; ProjectAssistant tarafindan sorgu baglaminda kullanilir.
+     */
+    public static class ProjectDetails {
+        public List<String> thirdPartyLibs = new ArrayList<>();
+        public Map<String, List<String>> csvColumns = new LinkedHashMap<>();
+        public String readmeContent = "";
+        public Map<String, String> runCommands = new LinkedHashMap<>();
+        public boolean hasHardcodedSecrets = false;
+        /** Hangi dosyalarda hardcoded secret tespit edildi (per-file guvenlik notu icin). */
+        public List<String> hardcodedSecretFiles = new ArrayList<>();
     }
 
     private ConfigManager configManager;
@@ -112,6 +136,16 @@ public class ProjectRepository {
             provider.updateDescription(projectId, description);
         } catch (Exception e) {
             System.err.println("Aciklama guncellenirken hata: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // --- Zengin proje detaylarini guncelle (README analizi sonrasi) ---
+    public void updateProjectDetails(String projectId, ProjectDetails details) {
+        try {
+            provider.updateProjectDetails(projectId, details);
+        } catch (Exception e) {
+            System.err.println("Proje detaylari guncellenirken hata: " + e.getMessage());
             e.printStackTrace();
         }
     }

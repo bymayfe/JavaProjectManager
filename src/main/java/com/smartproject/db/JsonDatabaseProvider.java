@@ -111,6 +111,21 @@ public class JsonDatabaseProvider implements DatabaseProvider {
     }
 
     @Override
+    public void updateProjectDetails(String projectId, ProjectRepository.ProjectDetails details) throws Exception {
+        for (ProjectRepository.ProjectEntry e : entries) {
+            if (projectId.equals(e.id)) {
+                e.thirdPartyLibs    = new ArrayList<>(details.thirdPartyLibs);
+                e.csvColumns        = new LinkedHashMap<>(details.csvColumns);
+                e.readmeContent     = details.readmeContent;
+                e.runCommands       = new LinkedHashMap<>(details.runCommands);
+                e.hasHardcodedSecrets = details.hasHardcodedSecrets;
+                break;
+            }
+        }
+        save();
+    }
+
+    @Override
     public void deleteById(String projectId) throws Exception {
         entries.removeIf(e -> projectId.equals(e.id));
         save();
