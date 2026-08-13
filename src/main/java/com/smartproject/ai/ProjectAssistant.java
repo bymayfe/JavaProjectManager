@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Kullanicinin sorusuna gore taranan projelerden oneri yapar.
@@ -70,41 +71,59 @@ public class ProjectAssistant {
                 if (p.tags != null && !p.tags.isEmpty()) {
                     context.append("   Etiketler: ").append(String.join(", ", p.tags)).append("\n");
                 }
-                if (p.description != null && !p.description.isEmpty()) {
+
+                // --- Zengin Analiz Detaylari ---
+                if (p.thirdPartyLibs != null && !p.thirdPartyLibs.isEmpty()) {
+                    context.append("   3. Parti Kutuphaneler: ").append(String.join(", ", p.thirdPartyLibs)).append("\n");
+                }
+                if (p.csvColumns != null && !p.csvColumns.isEmpty()) {
+                    for (Map.Entry<String, List<String>> csvEntry : p.csvColumns.entrySet()) {
+                        context.append("   CSV Sutunlari [").append(csvEntry.getKey()).append("]: ")
+                               .append(String.join(", ", csvEntry.getValue())).append("\n");
+                    }
+                }
+                if (p.runCommands != null && !p.runCommands.isEmpty()) {
+                    context.append("   Calistirma Komutlari:\n");
+                    for (Map.Entry<String, String> cmdEntry : p.runCommands.entrySet()) {
+                        context.append("     ").append(cmdEntry.getKey()).append(" -> ").append(cmdEntry.getValue()).append("\n");
+                    }
+                }
+                if (p.hasHardcodedSecrets) {
+                    context.append("   ⚠ Guvenlik: Bu projede hardcoded (sabit kodlanmis) kimlik bilgisi tespit edildi.\n");
+                }
+                if (p.readmeContent != null && !p.readmeContent.isEmpty()) {
+                    int limit = Math.min(p.readmeContent.length(), 3500);
+                    context.append("   README (Tam veya Geniş Özet): \n").append(p.readmeContent, 0, limit);
+                    if (p.readmeContent.length() > limit) context.append("... (devamı kesildi)\n");
+                    context.append("\n");
+                } else if (p.description != null && !p.description.isEmpty()) {
                     context.append("   Aciklama: ").append(p.description, 0,
-                            Math.min(p.description.length(), 300)).append("...\n");
+                            Math.min(p.description.length(), 1500)).append("...\n");
                 }
                 context.append("\n");
             }
         }
 
+
         int projectCount = allProjects.size();
         String systemPrompt = "Sen akilli, samimi ve yetenekli bir yazilim proje asistanisin.\n" +
-                "Kullanicinin analiz edilmis projelerini bilirsin; projeleri bulmak, aciklamak ve kaynak bilgilerini vermek konusunda yardimci olursun.\n\n" +
-                "KIRMIZI CIZGI KURALLARI (BUNLARA KESINLIKLE UY):\n" +
-                "1. Eger kullanici SADECE 'Merhaba', 'Selam', 'Naber' gibi selamlama kelimeleri yazarsa, " +
-                "projeleri listelemeden samimi bir selam ver ve 'Merhaba! Veritabaninizda " + projectCount + " adet proje var, nasil bir sey ariyorsunuz?' de.\n" +
-                "2. Kullanici genel veya konusuna dair bir soru sorarsa (orn: 'ne ile ilgili proje', 'bu ne projesi', 'konusu ne', 'ne ise yarar' vb.):\n" +
-                "   - Eger veritabaninda SADECE 1 adet proje varsa veya sohbet gecmisinde bir projeden bahsedilmisse, " +
-                "dogrudan o projenin aciklamasini, konusunu ve amacini samimi bir sekilde acikla.\n" +
-                "   - ASLA kullanicinin cumlesindeki 'ne', 'ile', 'ilgili' gibi kelimeleri ayri ayri arama terimi olarak algilama! Cumleyi dogal dilde butunsel olarak anla.\n" +
-                "3. Eger kullanici net bir arama veya kelime eslesmesi yapiyorsa (orn: 'python projesi var mi', 'X adinda proje var mi' vb.), " +
-                "veritabanindaki projeleri tarayarak eslesenleri bul ve detaylarini (adi, yolu) ver.\n" +
-                "4. Eger kullanici 'veritabaninda ne var', 'hangi projeler var', 'projeleri listele' derse, " +
-                "SADECE asagida verilen listedeki projeleri (adlari ve yollariyla) listele.\n" +
-                "5. DIKKAT: Veritabaninda TOPLAM " + projectCount + " adet proje var! SADECE bu " + projectCount + " adet projeyi listele. ASLA KENDINDEN proje uydurma!\n" +
-                "6. Sordugu seyle ilgili gercek bir proje yoksa 'Maalesef buna uygun proje bulamadim' de.\n" +
-                "7. Cevaplarin samimi, kisa, net ve okunabilir olsun. ASLA sohbetin devamini (Kullanici:, Asistan:, Sohbet Gecmisi: vb.) kendi cevabina dahil etme! SADECE kendi cevabini ver.\n" +
-                "8. KAYNAK BİLGİSİ KURALLARI — COKEN ONEMLI:\n" +
-                "   - Her projenin 'Kaynak Turu' alani DOCKER veya SSH olabilir. Bu projelerin nerede calistigini (sunucu IP, container adi) biliyorsun!\n" +
-                "   - Eger proje bilgisinde 'Uzak Sunucu (SSH Host)' alani varsa, kullanici VDS IP'sini veya baglanti bilgisini sorarsa BU BİLGİYİ KULLAN ve soyle!\n" +
-                "   - Eger kullanici 'vdsnin ipi ne', 'sunucu adresi ne', 'host nedir', 'ip adresi' gibi bir sey sorarsa ve bende o projenin host bilgisi varsa, dogrudan soyle!\n" +
-                "   - Docker kaynakli projeleri aciklarkern 'Bu proje, [sunucu IP] adresindeki VDS uzerinde [container adi] Docker container'i icinde calisiyor.' gibi detayli ac.\n" +
-                "   - Eger bilgi gercekten yoksa (sshHost alani bos ya da yok ise) o zaman 'Bu bilgiye sahip degilim' de.\n" +
-                "9. Projeyi detayli anlatirken: dil, dosya sayisi, container/sunucu bilgisi, tahmini amaci — hepsini bir arada ver. Robottik degil, samimi bir gelistirici gibi yaz.\n\n" +
-                "--- VERITABANINDAKI PROJELERIN BASI ---\n" +
+                "Kullanicinin analiz edilmis projelerini bilirsin; asagida verilen projeleri bulmak, aciklamak ve sorularini yanitlamakla gorevlisin.\n\n" +
+                "<veritabani_projeleri>\n" +
                 context.toString() +
-                "--- VERITABANINDAKI PROJELERIN SONU ---\n";
+                "</veritabani_projeleri>\n\n" +
+                "KIRMIZI CIZGI KURALLARI (ASAGIDAKI KURALLARA KESINLIKLE UYACAKSIN):\n" +
+                "1. Eger kullanici SADECE 'Merhaba', 'Selam' gibi selamlama kelimeleri yazarsa, projeleri listelemeden samimi bir selam ver ve 'Merhaba! Sistemimde " + projectCount + " adet projeniz bulunuyor, nasil bir sey ariyorsunuz?' de.\n" +
+                "2. Kullanici genel olarak 'benim projem var mi', 'neler var', 'projeleri listele' diye sorarsa, KESINLIKLE 'Sistemimde " + projectCount + " adet projeniz var' de ve <veritabani_projeleri> icindeki projelerin isimlerini kisaca listele. ASLA 'projeniz bulunmamaktadir' seklinde yalan soyleme!\n" +
+                "3. Kullanici bir teknoloji, kütüphane, arac veya kavram ariyorsa (orn: shap, xai, python, react, sql, makine ogrenmesi vb.):\n" +
+                "   - <veritabani_projeleri> icindeki her bir projenin 'Diller', 'Etiketler', '3. Parti Kutuphaneler' ve 'README' kisimlarini cok dikkatli tara.\n" +
+                "   - Eger aranan kelime VEYA esanlamlisi/iliskilisi (orn: XAI ariyorsa SHAP, LIME da gecerlidir) bu alanlarda geciyorsa, o projeyi MUTLAKA listele.\n" +
+                "   - Sadece eger tum projeleri taradiktan sonra HICBIR iliski bulamazsan 'Maalesef bulamadim' de.\n" +
+                "4. Listeleme yaparken: 'X projesinde bu teknoloji kullanilmistir' diyerek projeyi ve nasil kullanildigini (README'ye dayanarak) kisaca acikla.\n" +
+                "5. Eger kullanici konusuna dair bir soru sorarsa (orn: 'bu ne projesi', 'ne ise yarar'):\n" +
+                "   - Sohbet gecmisinde konusulan projeyi veya veritabanindaki projeyi bulup README detaylarina dayanarak samimi bir sekilde anlat.\n" +
+                "6. KAYNAK BİLGİSİ (DOCKER / SSH):\n" +
+                "   - Projenin nerede calistigini (Uzak Sunucu IP, Docker Container Adi vb.) biliyorsan ve kullanici sorarsa ('vds ipi ne', 'nerede calisiyor'), bu bilgiyi dogrudan ver.\n" +
+                "7. Cevaplarin samimi, kisa, net ve profesyonel olsun. Robottik ifadelerden kacinin ve yalnizca gercekten asistan gibi yanit verin.\n";
 
         // Sohbet gecmisini ve sistem talimatini yapılandırılmış mesaj dizisi olarak olustur
         JsonArray messages = new JsonArray();

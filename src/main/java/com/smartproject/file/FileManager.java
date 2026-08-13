@@ -3,8 +3,9 @@ package com.smartproject.file;
 import com.smartproject.model.Project;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class FileManager {
 
@@ -18,10 +19,17 @@ public class FileManager {
             markerFolder.mkdirs();
         }
 
-        // README.md dosyasını yaz
+        // README.md dosyasını yaz (varsa tamamen silip yeniden yaz)
         File readmeFile = new File(markerFolder, "README.md");
-        try (FileWriter writer = new FileWriter(readmeFile)) {
-            writer.write(markdownContent);
+        if (readmeFile.exists()) {
+            readmeFile.delete();
         }
+        Files.write(readmeFile.toPath(), markdownContent.getBytes(StandardCharsets.UTF_8),
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.TRUNCATE_EXISTING,
+                java.nio.file.StandardOpenOption.WRITE);
+
+        // Proje nesnesindeki aciklamayi diskten taze oku
+        project.loadSpmInfoIfExists();
     }
 }

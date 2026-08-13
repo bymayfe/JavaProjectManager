@@ -129,6 +129,34 @@ public class MongoDatabaseProvider implements DatabaseProvider {
     }
 
     @Override
+    public void updateProjectDetails(String projectId, ProjectRepository.ProjectDetails details) throws Exception {
+        Document update = new Document();
+        update.append("thirdPartyLibs", details.thirdPartyLibs);
+        update.append("readmeContent", details.readmeContent);
+        update.append("hasHardcodedSecrets", details.hasHardcodedSecrets);
+
+        // csvColumns: Map<String, List<String>> -> Document
+        Document csvDoc = new Document();
+        if (details.csvColumns != null) {
+            for (Map.Entry<String, java.util.List<String>> entry : details.csvColumns.entrySet()) {
+                csvDoc.append(entry.getKey().replace(".", "_").replace("$", "_"), entry.getValue());
+            }
+        }
+        update.append("csvColumns", csvDoc);
+
+        // runCommands: Map<String, String> -> Document
+        Document cmdDoc = new Document();
+        if (details.runCommands != null) {
+            for (Map.Entry<String, String> entry : details.runCommands.entrySet()) {
+                cmdDoc.append(entry.getKey().replace(".", "_").replace("$", "_"), entry.getValue());
+            }
+        }
+        update.append("runCommands", cmdDoc);
+
+        collection.updateOne(Filters.eq("_id", projectId), new Document("$set", update));
+    }
+
+    @Override
     public void deleteById(String projectId) throws Exception {
         collection.deleteOne(Filters.eq("_id", projectId));
     }

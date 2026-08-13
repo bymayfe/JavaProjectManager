@@ -10,7 +10,8 @@ import java.util.function.Supplier;
 
 public class AssistantPanel extends JPanel {
 
-    private JPanel   chatPanel;
+    private JTextPane   chatPane;
+    private StringBuilder chatHtml;
     private JScrollPane chatScroll;
     private JTextField  txtInput;
     private JButton     btnSend;
@@ -37,8 +38,14 @@ public class AssistantPanel extends JPanel {
         this.gptApiUrlSupplier   = gptApiUrlSupplier;
         this.gptModelSupplier    = gptModelSupplier;
 
+        this.chatHtml            = new StringBuilder();
+        
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        // Baslangic HTML yapisi
+        chatHtml.append("<html><body style='font-family: Segoe UI, sans-serif; font-size: 13px; color: #E0E0E0; background-color: #2b2b2b; margin: 0; padding: 10px;'>");
+        
         buildUI();
         addWelcomeMessage();
         refreshActiveModel();
@@ -60,12 +67,13 @@ public class AssistantPanel extends JPanel {
 
         add(northPanel, BorderLayout.NORTH);
 
-        // Mesaj paneli - BoxLayout ile dikey dizilim
-        chatPanel = new JPanel();
-        chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
-        chatPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        chatScroll = new JScrollPane(chatPanel);
+        // Mesaj paneli - JTextPane ile HTML destegi
+        chatPane = new JTextPane();
+        chatPane.setContentType("text/html");
+        chatPane.setEditable(false);
+        chatPane.setBackground(new Color(43, 43, 43));
+        
+        chatScroll = new JScrollPane(chatPane);
         chatScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         chatScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         chatScroll.setBorder(BorderFactory.createTitledBorder("Sohbet"));
@@ -141,67 +149,52 @@ public class AssistantPanel extends JPanel {
         }.execute();
     }
 
-    // --- Kullanici balonu: sag hizali, mavi ---
+    // --- Kullanici balonu: sag hizali ---
     private void addUserBubble(String text) {
-        addBubble(text, new Color(55, 95, 200), new Color(230, 235, 255), true);
+        String formatted = escapeAndFormat(text);
+        chatHtml.append("<table width='100%' border='0' cellspacing='0' cellpadding='5'><tr>")
+                .append("<td width='20%'></td>")
+                .append("<td align='right'>")
+                .append("<table border='0' cellspacing='0' cellpadding='10' bgcolor='#375fc8'>")
+                .append("<tr><td align='left' style='color: #e6ebff; font-family: Segoe UI, sans-serif; font-size: 13px;'>")
+                .append(formatted)
+                .append("</td></tr></table>")
+                .append("</td></tr></table><br>");
+        updateChatPane();
     }
 
-    // --- AI balonu: sol hizali, koyu gri ---
+    // --- AI balonu: sol hizali ---
     private void addAIBubble(String text) {
-        addBubble(text, new Color(50, 50, 60), new Color(215, 215, 225), false);
+        String formatted = escapeAndFormat(text);
+        chatHtml.append("<table width='100%' border='0' cellspacing='0' cellpadding='5'><tr>")
+                .append("<td align='left'>")
+                .append("<table border='0' cellspacing='0' cellpadding='10' bgcolor='#32323c'>")
+                .append("<tr><td align='left' style='color: #d7d7e1; font-family: Segoe UI, sans-serif; font-size: 13px;'>")
+                .append(formatted)
+                .append("</td></tr></table>")
+                .append("</td>")
+                .append("<td width='20%'></td>")
+                .append("</tr></table><br>");
+        updateChatPane();
     }
 
-    /**
-     * Baloncuk olusturur.
-     * Genislik: chatPanel genisliginin %72'si (sabit degil, scroll panele gore ayarlanir).
-     * isUser=true => sag hizali, isUser=false => sol hizali.
-     */
-    private void addBubble(String text, Color bg, Color fg, boolean isUser) {
-        JTextArea area = new JTextArea(text);
-        area.setEditable(false);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
-        area.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        area.setBackground(bg);
-        area.setForeground(fg);
-        area.setBorder(new EmptyBorder(8, 12, 8, 12));
-        area.setOpaque(true);
-        
-        // Secip kopyalamayi gorunur kil
-        area.setSelectionColor(new Color(100, 150, 255, 120));
-        area.setSelectedTextColor(Color.WHITE);
-        area.getCaret().setSelectionVisible(true);
+    private String escapeAndFormat(String text) {
+        if (text == null) return "";
+        // 1. HTML Karakterlerini Kacis
+        String escaped = text.replace("&", "&amp;")
+                             .replace("<", "&lt;")
+                             .replace(">", "&gt;");
+        // 2. Yeni Satirlar -> <br>
+        escaped = escaped.replace("\n", "<br>");
+        // 3. Markdown Kalin Yazi **metin** -> <b>metin</b>
+        escaped = escaped.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>");
+        // 4. Markdown Kod `metin` -> HTML code block
+        escaped = escaped.replaceAll("`(.*?)`", "<code style='background-color: #4a4a5a; color: #ffffff;'>&nbsp;$1&nbsp;</code>");
+        return escaped;
+    }
 
-        // Genisligi sinirla ve dogru yuksekligi hesaplamasi icin uyar
-        int bubbleWidth = 480;
-        area.setSize(new Dimension(bubbleWidth, Short.MAX_VALUE));
-        int calculatedHeight = area.getPreferredSize().height;
-        area.setPreferredSize(new Dimension(bubbleWidth, calculatedHeight));
-
-        // Hizalama icin BorderLayout kullanan bir satir paneli
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
-        if (isUser) {
-            // Sag: mesaj merkeze, sol taraf bos
-            JPanel filler = new JPanel();
-            filler.setOpaque(false);
-            row.add(filler, BorderLayout.CENTER);
-            row.add(area,   BorderLayout.EAST);
-        } else {
-            // Sol: mesaj basa, sag taraf bos
-            JPanel filler = new JPanel();
-            filler.setOpaque(false);
-            row.add(area,   BorderLayout.WEST);
-            row.add(filler, BorderLayout.CENTER);
-        }
-
-        chatPanel.add(row);
-        chatPanel.add(Box.createRigidArea(new Dimension(0, 8)));
-
-        chatPanel.revalidate();
-        chatPanel.repaint();
+    private void updateChatPane() {
+        chatPane.setText(chatHtml.toString() + "</body></html>");
         SwingUtilities.invokeLater(() -> {
             JScrollBar bar = chatScroll.getVerticalScrollBar();
             bar.setValue(bar.getMaximum());

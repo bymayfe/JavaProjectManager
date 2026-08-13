@@ -49,6 +49,28 @@ public class Project {
         this.displayName = parentName.isEmpty()
                 ? projectFolder.getName()
                 : parentName + " / " + projectFolder.getName();
+        
+        loadSpmInfoIfExists();
+    }
+
+    public void updateScanDate() {
+        this.scanDate = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+    }
+
+    public void loadSpmInfoIfExists() {
+        File spmDir = getSpmFolder();
+        if (spmDir != null && spmDir.exists()) {
+            File readmeFile = new File(spmDir, "README.md");
+            if (readmeFile.exists()) {
+                try {
+                    String content = new String(java.nio.file.Files.readAllBytes(readmeFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                    if (!content.trim().isEmpty()) {
+                        this.description = content.substring(0, Math.min(content.length(), 300));
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
     }
 
     // Docker / SSH icin constructor
@@ -96,6 +118,7 @@ public class Project {
         if (this.source == SourceType.LOCAL) {
             this.projectFolder = new File(entry.absolutePath);
             repopulateLocalSourceFiles();
+            loadSpmInfoIfExists();
         } else {
             this.projectFolder = null;
             this.sourceFiles = new ArrayList<>();
@@ -126,9 +149,19 @@ public class Project {
         }
     }
 
+    public void setProjectFolder(File newFolder) {
+        if (newFolder == null || !newFolder.exists() || !newFolder.isDirectory()) return;
+        this.projectFolder = newFolder;
+        String parentName = newFolder.getParentFile() != null ? newFolder.getParentFile().getName() : "";
+        this.displayName = parentName.isEmpty() ? newFolder.getName() : parentName + " / " + newFolder.getName();
+        repopulateLocalSourceFiles();
+        loadSpmInfoIfExists();
+    }
+
     public void repopulateLocalSourceFiles() {
         if (projectFolder == null || !projectFolder.exists() || !projectFolder.isDirectory()) return;
         this.sourceFiles = new ArrayList<>();
+        this.languagesUsed = new HashSet<>();
         scanLocalFiles(projectFolder);
     }
 
@@ -139,7 +172,9 @@ public class Project {
             if (f.isDirectory()) {
                 String name = f.getName().toLowerCase();
                 if (name.equals(".git") || name.equals("node_modules") || name.equals("target") ||
-                    name.equals("build") || name.equals(".idea") || name.equals(".spm") || name.equals("venv")) continue;
+                    name.equals("build") || name.equals(".idea") || name.equals(".spm") || name.equals("venv") ||
+                    name.equals(".venv") || name.equals("env") || name.equals(".env") || name.equals("site-packages") ||
+                    name.equals("__pycache__") || name.equals("bin") || name.equals("out") || name.equals("dist") || name.equals(".gradle")) continue;
                 scanLocalFiles(f);
             } else {
                 String name = f.getName().toLowerCase();
@@ -149,9 +184,29 @@ public class Project {
                     name.endsWith(".php") || name.endsWith(".rb") || name.endsWith(".sh") || name.endsWith("dockerfile") ||
                     name.endsWith(".yml") || name.endsWith(".yaml")) {
                     this.sourceFiles.add(f);
+                    detectAndAddLanguage(f.getName());
                 }
             }
         }
+    }
+
+    private void detectAndAddLanguage(String fileName) {
+        String lowerName = fileName.toLowerCase();
+        if (lowerName.endsWith(".java")) languagesUsed.add("Java");
+        else if (lowerName.endsWith(".py")) languagesUsed.add("Python");
+        else if (lowerName.endsWith(".js") || lowerName.endsWith(".ts")) languagesUsed.add("JavaScript/TypeScript");
+        else if (lowerName.endsWith(".html") || lowerName.endsWith(".css")) languagesUsed.add("Web");
+        else if (lowerName.endsWith(".cpp") || lowerName.endsWith(".h")) languagesUsed.add("C++");
+        else if (lowerName.endsWith(".c")) languagesUsed.add("C");
+        else if (lowerName.endsWith(".cs")) languagesUsed.add("C#");
+        else if (lowerName.endsWith(".php")) languagesUsed.add("PHP");
+        else if (lowerName.endsWith(".go")) languagesUsed.add("Go");
+        else if (lowerName.endsWith(".rb")) languagesUsed.add("Ruby");
+        else if (lowerName.endsWith(".rs")) languagesUsed.add("Rust");
+        else if (lowerName.endsWith(".yml") || lowerName.endsWith(".yaml")) languagesUsed.add("YAML/Docker");
+        else if (lowerName.endsWith(".json")) languagesUsed.add("JSON");
+        else if (lowerName.endsWith(".sh")) languagesUsed.add("Shell");
+        else if (lowerName.equals("dockerfile")) languagesUsed.add("Dockerfile");
     }
 
     // --- Getter / Setter ---
