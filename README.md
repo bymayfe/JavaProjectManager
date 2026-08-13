@@ -144,41 +144,24 @@ Use the platform-specific scripts in the project root:
 
 ---
 
-### 📦 Method C: Manual Release Packaging
-Follow these steps to package the project into release artifacts (.exe / .jar) for distribution:
+### 📦 Method C: Automated Release Packaging (Windows)
+
+We have provided a fully automated script to compile and package the release artifacts (.zip / .jar) for distribution.
+
+1. **Double-click `build_release.bat`** located in the project root.
+2. The script will automatically:
+   - Compile the project via Maven.
+   - Generate the **Cross-Platform JAR**.
+   - Bundle a native **Windows Portable EXE** (with embedded JRE) using `jpackage`.
+   - Compress the outputs into `dist/SmartProjectManager-Windows-Portable.zip`.
+   - Generate the SHA256 hashes and Markdown for GitHub Releases!
 
 > [!NOTE]
-> Distributing the cross-platform **JAR** file (`SmartProjectManager-CrossPlatform.jar`) is completely sufficient for Windows, macOS, and Linux, provided that the target computer has at least Java 11 installed. Creating native bundles (EXE, APP, DEB) is optional.
+> Distributing the cross-platform **JAR** file (`SmartProjectManager-CrossPlatform.jar`) is completely sufficient for macOS and Linux, provided that the target computer has at least Java 11 installed.
 
-1. **Compile the JAR:**
-   * **Via GUI:** Use `package` in VS Code Maven panel or `Clean and Build` in NetBeans.
-   * **Via CLI:** Run `mvnw.cmd clean package` (Windows) or `./mvnw clean package` (Mac/Linux).
-2. **Prepare the Cross-Platform Release JAR:**
-   * Copy the fat JAR generated in `target/` to the `dist/` directory and rename it to **`SmartProjectManager-CrossPlatform.jar`**.
-3. **Compile Native Installer Bundles (jpackage):**
-   *Note: Cross-compilation is not supported by jpackage. You must run these commands on the corresponding host system:*
-   * **Windows (.exe - Portable Folder):**
-     Create a native Windows executable and bundled JRE:
-     ```cmd
-     "C:\Program Files\Java\jdk-26.0.1\bin\jpackage.exe" --input target\ --dest dist\ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
-     ```
-   * **macOS (.app Bundle):**
-     Generate a native Mac executable structure:
-     ```bash
-     jpackage --input target/ --dest dist/ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
-     ```
-     *(Use `--type dmg` if you prefer to generate a native drag-and-drop installer image).*
-   * **Linux (.deb Installer Package):**
-     Generate a Debian installation package:
-     ```bash
-     jpackage --input target/ --dest dist/ --name smartprojectmanager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type deb
-     ```
-4. **Compress Portable Builds (ZIP / TAR.GZ):**
-   * **On Windows (Explorer):** Right-click the folder `dist/SmartProjectManager` -> **Send to Compressed (zipped) folder** (or **Compress to ZIP file**) and rename it to `SmartProjectManager-Windows-Portable.zip`.
-   * **On macOS / Linux (Terminal):** Archive using tar:
-     ```bash
-     tar -czvf dist/SmartProjectManager-Portable.tar.gz -C dist SmartProjectManager
-     ```
+---
+*(For macOS/Linux manual packaging instructions using jpackage, see previous versions of this documentation).*
+
 
 ---
 

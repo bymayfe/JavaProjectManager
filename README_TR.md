@@ -144,41 +144,23 @@ Proje kök dizininde hazır bulunan scriptleri kullanarak tek tıkla çalıştı
 
 ---
 
-### 📦 Yöntem C: Manuel Sürüm (Release) Dosyaları Oluşturma
-Hocanıza göndereceğiniz veya GitHub Sürümlerine (Releases) yükleyeceğiniz dosyaları hazırlama adımları:
+### 📦 Yöntem C: Otomatik Sürüm (Release) Dosyaları Oluşturma (Windows)
+
+GitHub Sürümlerine (Releases) yükleyeceğiniz dosyaları hazırlamak için tam otomatik bir script oluşturduk.
+
+1. Proje ana klasöründeki **`build_release.bat`** dosyasına çift tıklayın.
+2. Script sizin için her şeyi otomatik yapacaktır:
+   - Kodu Maven ile derler.
+   - Ortak **Cross-Platform JAR** dosyasını oluşturur.
+   - `jpackage` kullanarak **Windows Portable EXE** (gömülü Java içerir) paketini ayarlar.
+   - Tüm çıktıları sıkıştırarak `dist/SmartProjectManager-Windows-Portable.zip` dosyasını hazırlar.
+   - GitHub Releases için gereken SHA256 şifrelerini ve Markdown metnini ekrana yazdırır!
 
 > [!NOTE]
-> Her işletim sistemi (Windows, macOS, Linux) için sadece ortak **JAR** dosyasını (`SmartProjectManager-CrossPlatform.jar`) paylaşmak veya kullanmak da tamamen yeterlidir (bu durumda hedef bilgisayarda en az Java 11 kurulu olması gerekir). İşletim sistemlerine özel yerel paketler (EXE, APP, DEB) oluşturmak isteğe bağlıdır.
+> Her işletim sistemi (Windows, macOS, Linux) için sadece ortak **JAR** dosyasını (`SmartProjectManager-CrossPlatform.jar`) paylaşmak veya kullanmak da tamamen yeterlidir (bu durumda hedef bilgisayarda en az Java 11 kurulu olması gerekir).
 
-1. **JAR Dosyasını Derleyin:**
-   * **Arayüzden:** VS Code Maven panelinden `package` veya NetBeans'ten `Clean and Build` yapın.
-   * **Terminalden:** `mvnw.cmd clean package` (Windows) veya `./mvnw clean package` (Mac/Linux) çalıştırın.
-2. **Mac ve Linux Sürümünü Hazırlayın:**
-   * `target/` içinde oluşan JAR dosyasını kopyalayıp `dist/` klasörünün içerisine yapıştırın ve adını **`SmartProjectManager-CrossPlatform.jar`** yapın.
-3. **Sistem Kurulum & Çalıştırılabilir Paketlerini Derleyin (jpackage):**
-   *jpackage aracı çapraz derlemeyi desteklemez; hangi sistem için paket üretecekseniz o işletim sisteminde bu komutu çalıştırmalısınız:*
-   * **Windows (.exe - Taşınabilir Klasör):**
-     Terminalden şu komutla yerel Windows uygulaması oluşturun:
-     ```cmd
-     "C:\Program Files\Java\jdk-26.0.1\bin\jpackage.exe" --input target\ --dest dist\ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
-     ```
-   * **macOS (.app Uygulaması):**
-     Mac terminalinde şu komutla taşınabilir uygulama paketi üretebilirsiniz:
-     ```bash
-     jpackage --input target/ --dest dist/ --name SmartProjectManager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type app-image
-     ```
-     *(Eğer disk resmi kurulum paketi üretmek isterseniz `--type app-image` yerine `--type dmg` parametresini kullanabilirsiniz).*
-   * **Linux (.deb / Kurulum Paketi):**
-     Linux terminalinde şu komutla Debian paketi üretebilirsiniz:
-     ```bash
-     jpackage --input target/ --dest dist/ --name smartprojectmanager --main-jar SmartProjectManager-1.0-SNAPSHOT-jar-with-dependencies.jar --main-class com.smartproject.Main --type deb
-     ```
-4. **Taşınabilir Sürümü Sıkıştırın (ZIP / TAR.GZ):**
-   * **Windows'ta (Sağ Tıkla):** `dist/` klasöründeki `SmartProjectManager` klasörüne **sağ tıklayarak ZIP dosyasına sıkıştırın** ve adını `SmartProjectManager-Windows-Portable.zip` yapın.
-   * **Mac / Linux'ta (Terminalden):** Terminalden şu komutla sıkıştırın:
-     ```bash
-     tar -czvf dist/SmartProjectManager-Portable.tar.gz -C dist SmartProjectManager
-     ```
+---
+*(Mac/Linux sistemlerinde jpackage ile manuel paketleme adımları için bu belgenin önceki sürümlerine göz atabilirsiniz).*
 
 ---
 

@@ -21,6 +21,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **[AssistantPanel] Modern Chat Layout** — User bubbles are now perfectly constrained to a maximum width (70%) and cleanly right-aligned using HTML tables, matching modern messaging app aesthetics.
 - **[MainGUI] Detailed Project Selection Panel** — Selecting a project now displays its absolute path and activates contextual navigation buttons (Go Up, Go Down, Open Folder) in the UI, dynamically disabling them when multiple or no projects are selected.
 
+### 🛠️ Build & Automation
+- **[Build] Automated Release Script** — Added `build_release.bat` and `build_release.ps1` to automate Maven compilation, Cross-Platform JAR extraction, Windows Portable App bundling via `jpackage`, ZIP compression, and SHA256 checksum generation for GitHub releases in a single click.
+
 ### 🚀 Core Scanner Improvements
 - **[ProjectScanner] Advanced Nested Project Detection** — Completely overhauled the directory scanner to handle monorepos and deeply nested workspaces. The scanner now actively looks for explicit manifest files (`package.json`, `pom.xml`, `requirements.txt`, `docker-compose.yml`, etc.) and correctly identifies sub-projects without falsely grouping them under a single root folder.
 - **[ProjectScanner] Expanded Ignore List** — Added `venv`, `.venv`, `env`, `.env`, `site-packages`, `__pycache__`, `.next`, `.nuxt`, `.turbo`, `dist`, `out`, `bin`, and `.cache` to the directory ignore list to massively speed up scan times and prevent irrelevant file indexing.
